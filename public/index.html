@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urbana | Tu Tienda de Ropa</title>
+    <!-- Aquí conectamos el HTML con nuestro archivo de diseño CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Encabezado principal -->
+    <header>
+        <h1>Urbana</h1>
+        <p>Viste tu estilo, marca la diferencia.</p>
+    </header>
+
+    <!-- Sección de Productos -->
+    <!-- Colección Destacada Section -->
+    <section class="featured-collection">
+        <h2>Colección Destacada</h2>
+        
+        <!-- CAMBIO 1: Galería vacía con ID para que JavaScript la encuentre -->
+        <div class="product-gallery" id="contenedor-productos">
+            <!-- JavaScript inyectará las tarjetas aquí automáticamente -->
+        </div>
+        
+    </section>
+
+    <!-- Sección de Información y Ubicación -->
+    <section class="informacion">
+        <h2>Encuéntranos</h2>
+        <p><strong>Dirección:</strong> Calle 123 #45-67, Cali, Colombia.</p>
+        <p><strong>Horario:</strong> Lunes a Sábado de 10:00 AM a 8:00 PM</p>
+        <p><strong>Contacto:</strong> hola@urbana.com | +57 300 123 4567</p>
+    </section>
+
+    <!-- Pie de página -->
+    <footer>
+        <p>&copy; 2026 Urbana Tienda de Ropa. Todos los derechos reservados.</p>
+    </footer>
+
+    <!-- CAMBIO 2: Script de conexión con la Base de Datos Backend -->
+    <script>
+        // Función asíncrona para buscar y dibujar los productos
+        async function cargarProductos() {
+            try {
+                // 1. Llamamos a nuestro servidor pidiendo los datos
+                const respuesta = await fetch('/api/productos');
+                const productos = await respuesta.json(); // Convertimos la respuesta a un arreglo
+
+                // 2. Buscamos el contenedor vacío en el HTML
+                const contenedor = document.getElementById('contenedor-productos');
+                contenedor.innerHTML = ''; // Limpiamos por si acaso hay algo previo
+
+                // 3. Recorremos cada producto que llegó de la base de datos
+                productos.forEach(producto => {
+                    
+                    // 4. Creamos el HTML respetando tus clases CSS exactas (.product-card, .price)
+                    const tarjetaHTML = `
+                        <article class="product-card">
+                            <img src="/${producto.imagen}" alt="${producto.nombre}">
+                            <h3>${producto.nombre}</h3>
+                            <p class="price">$${producto.precio.toLocaleString('es-CO')} COP</p>
+                        </article>
+                    `;
+                    
+                    // 5. Añadimos la tarjeta al contenedor principal
+                    contenedor.innerHTML += tarjetaHTML;
+                });
+
+            } catch (error) {
+                console.error("Error cargando los productos:", error);
+                document.getElementById('contenedor-productos').innerHTML = '<p>Error al cargar el catálogo desde el servidor.</p>';
+            }
+        }
+
+        // Ejecutamos la función inmediatamente cuando la página cargue
+        cargarProductos();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,176 @@
+/* Reseteo básico para que se vea igual en todos los navegadores */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Diseño del encabezado */
+header {
+    background-color: #222;
+    color: white;
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+header h1 {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Diseño de las secciones generales */
+section {
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+section h2 {
+    color: #333;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+}
+
+/* Distribución de la galería de productos usando Flexbox */
+.galeria {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap; /* Permite que los elementos bajen de línea en pantallas pequeñas */
+
+    /* Agrega estas dos líneas para el control del contenedor padre */
+    max-width: 1000px;
+    margin: 0 auto;
+
+}
+
+.producto {
+    background-color: #f9f9f9;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+
+    /* Agrega esta línea para controlar el tamaño absoluto */
+    width: 100px;
+
+}
+
+.producto:hover {
+    transform: translateY(-5px); /* Efecto al pasar el mouse */
+}
+
+
+/*Aqui se le establece el mismo tamaño a todas las imagenes*/
+/*
+.producto img {
+    width: 100%;           /* Obliga a la imagen a no salirse del ancho de su caja 
+    height: 300px;         /* Fija exactamente la misma altura para todas 
+    object-fit: cover;     /* Recorta el sobrante sin deformar ni aplastar la foto 
+    border-radius: 4px;    /* Mantiene los bordes suavemente redondeados 
+    margin-bottom: 1rem;
+}*/
+
+/* --- Estilos Generales para el Grid --- */
+.featured-collection {
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.product-gallery {
+    display: grid;
+    /* Fuerza una cuadrícula de 3 columnas iguales */
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem; /* Espaciado uniforme entre tarjetas */
+    margin-top: 2rem;
+}
+
+/* --- Estilos para la Tarjeta (El Contenedor) --- */
+.product-card {
+    background-color: #fcfcfc;
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* Sombra sutil vista en tu captura */
+    
+    /* Importante: Establece una altura máxima o relación de aspecto para la tarjeta */
+    /* aspect-ratio: 1 / 1.4;  Opcional: Fuerza a que la tarjeta sea siempre vertical */
+}
+
+/* --- Estilos para la Imagen (La Solución) --- */
+.product-card img {
+    /* Paso 1: Forzamos la caja contenedora de la imagen a tener un tamaño uniforme */
+    width: 100%;           /* Ocupa el 100% del ancho de la tarjeta */
+    height: 250px;         /* ESTA ES LA CLAVE: Forzamos una altura idéntica para todas */
+
+    /* Paso 2: Usamos object-fit para controlar la escala INTERNA */
+    object-fit: contain;   /* ESTA ES LA MAGIA: Escala la imagen para que quepa enteramente dentro de la caja de 250px, dejando espacio blanco ( pillarboxing/letterboxing) si es necesario. Esto mantiene la t-shirt completa visible y centrada sin deformar la tarjeta. */
+
+    object-position: center; /* Asegura que esté perfectamente centrada en su caja */
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+/* --- Otros Estilos Secundarios --- */
+.product-card h3 {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.product-card p.price {
+    font-weight: bold;
+    color: #333;
+}
+
+
+
+/* Diseño de la sección de información */
+.informacion {
+    background-color: #eee;
+}
+
+.informacion p {
+    margin-bottom: 0.8rem;
+    font-size: 1.1rem;
+    color: #444;
+}
+
+/* Diseño del pie de página */
+footer {
+    background-color: #222;
+    color: #ccc;
+    text-align: center;
+    padding: 1.5rem;
+}
+
+
+
+/* =========================================
+   DISEÑO RESPONSIVO (MÓVILES Y TABLETS)
+   ========================================= */
+
+   @media (max-width: 768px) {
+    
+    /* 1. Ajustamos la galería para que sea de 1 sola columna */
+    .product-gallery {
+        grid-template-columns: 1fr; /* 1fr significa "ocupa 1 fracción del espacio total", es decir, el 100% */
+        gap: 2rem; /* Reducimos un poco el espacio vertical entre tarjetas */
+    }
+
+    /* 2. Ajustamos las tarjetas para que no se salgan de la pantalla */
+    .product-card {
+        width: 100%; /* La tarjeta ocupará todo el ancho de la pantalla del celular */
+        max-width: 350px; /* Pero ponemos un límite para que no se vea gigante en tablets */
+        margin: 0 auto; /* Mantenemos la tarjeta perfectamente centrada */
+    }
+
+    /* 3. Reducimos el tamaño del título principal para que no se corte */
+    header h1 {
+        font-size: 2.2rem;
+    }
+
+    /* 4. Ajustamos el padding (espacio interno) de las secciones para móviles */
+    section {
+        padding: 2rem 1rem;
+    }
+}

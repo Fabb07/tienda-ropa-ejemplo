@@ -17,13 +17,18 @@ app.use(express.json());
 
 // 1. Configuración de seguridad con Usuario y Contraseña para el panel
 const administradorAuth = basicAuth({
-    users: { 'admin': 'tiendaejemplo2026' }, // Puedes cambiar 'admin' y 'urbana2026' por tus credenciales preferidas
-    challenge: true,                  // Activa la ventana emergente de autenticación en el navegador
+    users: { 'admin': 'tiendaejemplo2026' }, 
+    challenge: true,                  
     realm: 'Admin Urbana'
 });
 
-// Proteger la ruta /admin (exige credenciales para cualquier recurso dentro de esa carpeta)
-app.use('/admin', administradorAuth);
+// --- CORRECCIÓN AQUÍ ---
+// Protegemos directamente los archivos del panel sin importar en qué carpeta estén
+app.use('/panel.html', administradorAuth);
+app.use('/panel.js', administradorAuth);
+// Dejamos la protección /admin por si en el futuro decides organizar tus carpetas
+app.use('/admin', administradorAuth); 
+// -----------------------
 
 // Servir archivos estáticos (la página principal y el panel protegido)
 app.use(express.static(path.join(__dirname, 'public')));

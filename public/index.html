@@ -4,80 +4,152 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Urbana | Tu Tienda de Ropa</title>
-    <!-- Aquí conectamos el HTML con nuestro archivo de diseño CSS -->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-    <!-- Encabezado principal -->
     <header>
-        <h1>Urbana</h1>
-        <p>Viste tu estilo, marca la diferencia.</p>
+        <h1>Tienda ropa ejemplo</h1>
+        <p>texto sobre la tienda</p>
     </header>
 
-    <!-- Sección de Productos -->
-    <!-- Colección Destacada Section -->
     <section class="featured-collection">
-        <h2>Colección Destacada</h2>
-        
-        <!-- CAMBIO 1: Galería vacía con ID para que JavaScript la encuentre -->
+        <h2>Artículos Disponibles</h2>
         <div class="product-gallery" id="contenedor-productos">
             <!-- JavaScript inyectará las tarjetas aquí automáticamente -->
         </div>
-        
     </section>
 
-    <!-- Sección de Información y Ubicación -->
     <section class="informacion">
         <h2>Encuéntranos</h2>
         <p><strong>Dirección:</strong> Calle 123 #45-67, Cali, Colombia.</p>
         <p><strong>Horario:</strong> Lunes a Sábado de 10:00 AM a 8:00 PM</p>
-        <p><strong>Contacto:</strong> hola@urbana.com | +57 300 123 4567</p>
+        <p><strong>Contacto:</strong> tienda_ropa@email.com | +57 300 123 4567</p>
     </section>
 
-    <!-- Pie de página -->
     <footer>
-        <p>&copy; 2026 Urbana Tienda de Ropa. Todos los derechos reservados.</p>
+        <p>&copy; 2026 Tienda de Ropa. Todos los derechos reservados.</p>
     </footer>
 
-    <!-- CAMBIO 2: Script de conexión con la Base de Datos Backend -->
+    <!-- Modal de Detalle de Producto -->
+    <div id="modal-producto" class="modal">
+        <div class="modal-contenido">
+            <span class="cerrar-modal" onclick="cerrarModal()">&times;</span>
+            
+            <div class="carrusel-contenedor">
+                <button class="flecha-carrusel izquierda" onclick="cambiarImagen(-1)">&#10094;</button>
+                <img id="modal-imagen" src="" alt="Producto">
+                <button class="flecha-carrusel derecha" onclick="cambiarImagen(1)">&#10095;</button>
+            </div>
+
+            <h2 id="modal-nombre"></h2>
+            <p id="modal-precio" class="precio-modal"></p>
+            <p id="modal-descripcion"></p>
+
+            <div class="tallas-contenedor">
+                <label>Tallas disponibles:</label>
+                <div class="tallas-list">
+                    <!-- JavaScript inyectará las tallas aquí -->
+                </div>
+            </div>
+
+            <a id="modal-whatsapp" href="#" target="_blank" class="btn-whatsapp">
+                Consultar por WhatsApp
+            </a>
+        </div>
+    </div>
+
     <script>
-        // Función asíncrona para buscar y dibujar los productos
+        let imagenesActuales = [];
+        let indiceImagenActual = 0;
+        let productoSeleccionado = null;
+
         async function cargarProductos() {
             try {
-                // 1. Llamamos a nuestro servidor pidiendo los datos
                 const respuesta = await fetch('/api/productos');
-                const productos = await respuesta.json(); // Convertimos la respuesta a un arreglo
-
-                // 2. Buscamos el contenedor vacío en el HTML
+                const productos = await respuesta.json(); 
+    
                 const contenedor = document.getElementById('contenedor-productos');
-                contenedor.innerHTML = ''; // Limpiamos por si acaso hay algo previo
-
-                // 3. Recorremos cada producto que llegó de la base de datos
+                contenedor.innerHTML = ''; 
+    
                 productos.forEach(producto => {
-                    
-                    // 4. Creamos el HTML respetando tus clases CSS exactas (.product-card, .price)
+                    let primeraImagen = '';
+                    if (producto.imagen) {
+                        const lista = producto.imagen.split(',');
+                        // Se asigna directamente la URL de Cloudinary
+                        primeraImagen = lista[0];
+                    }
+    
                     const tarjetaHTML = `
-                        <article class="product-card">
-                            <img src="/${producto.imagen}" alt="${producto.nombre}">
+                        <article class="product-card" onclick='abrirModal(${JSON.stringify(producto)})' style="cursor: pointer;">
+                            <img src="${primeraImagen}" alt="${producto.nombre}">
                             <h3>${producto.nombre}</h3>
                             <p class="price">$${producto.precio.toLocaleString('es-CO')} COP</p>
                         </article>
                     `;
                     
-                    // 5. Añadimos la tarjeta al contenedor principal
                     contenedor.innerHTML += tarjetaHTML;
                 });
-
+    
             } catch (error) {
                 console.error("Error cargando los productos:", error);
                 document.getElementById('contenedor-productos').innerHTML = '<p>Error al cargar el catálogo desde el servidor.</p>';
             }
         }
 
-        // Ejecutamos la función inmediatamente cuando la página cargue
+        function abrirModal(producto) {
+            productoSeleccionado = producto;
+            imagenesActuales = producto.imagen ? producto.imagen.split(',') : [];
+            indiceImagenActual = 0;
+
+            document.getElementById('modal-nombre').innerText = producto.nombre;
+            document.getElementById('modal-precio').innerText = `$${Number(producto.precio).toLocaleString('es-CO')} COP`;
+            document.getElementById('modal-descripcion').innerText = producto.descripcion || 'Sin descripción disponible.';
+
+            const contenedorTallas = document.querySelector('.tallas-list');
+            contenedorTallas.innerHTML = ''; 
+                    
+            if (producto.tallas) {
+                const listaTallas = producto.tallas.split(',');
+                listaTallas.forEach(talla => {
+                    contenedorTallas.innerHTML += `<span>${talla}</span>`;
+                });
+            } else {
+                contenedorTallas.innerHTML = '<span>Única</span>'; 
+            }
+
+            actualizarImagenCarrusel();
+
+            const flechas = document.querySelectorAll('.flecha-carrusel');
+            flechas.forEach(f => f.style.display = imagenesActuales.length > 1 ? 'block' : 'none');
+
+            const numeroTelefono = "573001234567"; 
+            const mensaje = encodeURIComponent(`Hola, estoy interesado en el producto "${producto.nombre}" con precio de $${producto.precio}.`);
+            document.getElementById('modal-whatsapp').href = `https://wa.me/${numeroTelefono}?text=${mensaje}`;
+
+            document.getElementById('modal-producto').style.display = 'flex';
+        }
+
+        function cambiarImagen(direccion) {
+            if (imagenesActuales.length <= 1) return;
+            indiceImagenActual = (indiceImagenActual + direccion + imagenesActuales.length) % imagenesActuales.length;
+            actualizarImagenCarrusel();
+        }
+
+        function actualizarImagenCarrusel() {
+            const imgElement = document.getElementById('modal-imagen');
+            if (imagenesActuales.length > 0) {
+                // Se asigna directamente la URL de Cloudinary
+                imgElement.src = imagenesActuales[indiceImagenActual];
+            }
+        }
+
+        function cerrarModal() {
+            document.getElementById('modal-producto').style.display = 'none';
+        }
+    
         cargarProductos();
     </script>
-
+    
 </body>
 </html>

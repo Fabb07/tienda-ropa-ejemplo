@@ -1,0 +1,142 @@
+body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; padding: 2rem; }
+.admin-box { background: white; max-width: 800px; margin: 0 auto; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+h1, h2 { text-align: center; color: #333; }
+.form-grupo { margin-bottom: 1rem; }
+label { display: block; font-weight: bold; margin-bottom: 0.5rem; }
+input { width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+button.btn-agregar { width: 100%; background-color: #222; color: white; padding: 1rem; border: none; border-radius: 4px; font-size: 1.1rem; cursor: pointer; }
+button.btn-agregar:hover { background-color: #444; }
+#mensaje { text-align: center; font-weight: bold; color: green; margin-bottom: 2rem; }
+table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #ddd; }
+th { background-color: #f8f9fa; }
+img.miniatura { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
+button.btn-editar { background-color: #f39c12; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
+button.btn-eliminar { background-color: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+
+/* =========================================
+   DISEÑO RESPONSIVO (PANEL DE ADMINISTRADOR)
+   ========================================= */
+   @media (max-width: 768px) {
+    /* 1. Reduce el margen exterior para aprovechar el espacio de la pantalla */
+    body {
+        padding: 1rem;
+    }
+
+    /* 2. Fuerza a los contenedores principales a no exceder el ancho */
+    form, .inventario-container {
+        width: 100%;
+        padding: 1rem;
+        box-sizing: border-box;
+    }
+
+    /* 3. Asegura que los campos y el botón de agregar ocupen todo el ancho disponible */
+    input[type="text"], 
+    input[type="number"], 
+    input[type="file"], 
+    button {
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+    }
+
+    /* 4. Permite que la tabla se deslice horizontalmente sin romper la página */
+    table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap; /* Evita que el texto colapse en múltiples líneas */
+    }
+
+    /* 5. Apila los botones de "Cambiar Precio" y "Eliminar" para que sean fáciles de tocar */
+    td button {
+        display: block;
+        width: 100%;
+        margin-top: 5px;
+        margin-bottom: 5px;
+    }
+}
+
+
+
+
+/* =========================================
+   DISEÑO RESPONSIVO (MÓVILES Y TABLETS)
+   ========================================= */
+   @media (max-width: 768px) {
+    body {
+        padding: 1rem;
+    }
+
+    .admin-box, form {
+        width: 100%;
+        padding: 1rem;
+        box-sizing: border-box;
+    }
+
+    input[type="text"], 
+    input[type="number"], 
+    input[type="file"], 
+    button.btn-agregar {
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+    }
+
+    table, thead, tbody, th, td, tr {
+        display: block;
+        width: 100%;
+    }
+
+    thead {
+        display: none;
+    }
+
+    tr {
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        box-sizing: border-box;
+    }
+
+    /* Transformamos las celdas en contenedores flexibles */
+    td {
+        display: flex;
+        justify-content: space-between; /* Etiqueta a la izquierda, valor a la derecha */
+        align-items: center;
+        border-bottom: 1px solid #eee; /* Línea separadora sutil entre datos */
+        padding: 0.8rem 0;
+        font-size: 1.1rem;
+    }
+
+    /* Quitamos la línea de la última celda y apilamos los botones */
+    td:last-child {
+        border-bottom: none;
+        display: block; 
+        padding-top: 1rem;
+    }
+
+    /* Inyección de los títulos a la izquierda de cada fila */
+    td:nth-child(1)::before { content: "Imagen:"; font-weight: bold; color: #333; }
+    td:nth-child(2)::before { content: "Producto:"; font-weight: bold; color: #333; }
+    td:nth-child(3)::before { content: "Precio:"; font-weight: bold; color: #333; }
+
+    img.miniatura {
+        width: 70px;
+        height: 70px;
+        border-radius: 4px;
+        object-fit: cover;
+    }
+
+    td button {
+        display: block;
+        width: 100%;
+        padding: 0.8rem;
+        margin-top: 5px;
+        margin-bottom: 10px;
+        font-size: 1rem;
+        box-sizing: border-box;
+    }
+}

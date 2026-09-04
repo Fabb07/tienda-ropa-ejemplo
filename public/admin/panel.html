@@ -1,74 +1,64 @@
+<!-- public/panel.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Urbana | Panel de Administración</title>
-    <style>
-        /* Estilos básicos para que el panel se vea ordenado */
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; padding: 2rem; }
-        .admin-box { background: white; max-width: 500px; margin: 0 auto; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #333; margin-bottom: 1.5rem; }
-        label { display: block; font-weight: bold; margin-top: 1rem; margin-bottom: 0.5rem; }
-        input { width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; background-color: #222; color: white; padding: 1rem; border: none; border-radius: 4px; font-size: 1.1rem; margin-top: 1.5rem; cursor: pointer; }
-        button:hover { background-color: #444; }
-        #mensaje { text-align: center; margin-top: 1rem; font-weight: bold; color: green; }
-    </style>
+    <link rel="stylesheet" href="panel.css">
 </head>
 <body>
-
     <div class="admin-box">
         <h1>Gestión de Catálogo</h1>
-        
-        <!-- El atributo enctype es obligatorio para poder enviar archivos (imágenes) al servidor -->
+
         <form id="formulario-producto" enctype="multipart/form-data">
+            <div class="form-grupo">
+                <label for="nombre">Nombre de la Prenda:</label>
+                <input type="text" id="nombre" name="nombre" required>
+            </div>
+            <div class="form-grupo">
+                <label for="precio">Precio (COP):</label>
+                <input type="number" id="precio" name="precio" required>
+            </div>
+            <div class="form-grupo">
+                <label for="descripcion">Descripción del Producto:</label>
+                <textarea id="descripcion" name="descripcion" rows="3"></textarea>
+            </div>
+            <div class="form-grupo">
+                <label for="imagenes">Fotografías del Producto (puedes seleccionar varias):</label>
+                <input type="file" id="imagenes" name="imagenes" accept="image/*" multiple required>
+            </div>
             
-            <label for="nombre">Nombre de la Prenda:</label>
-            <input type="text" id="nombre" placeholder="Ej: Camiseta Urbana Negra" required>
-
-            <label for="precio">Precio (COP):</label>
-            <input type="number" id="precio" placeholder="Ej: 45000" required>
-
-            <label for="imagen">Fotografía del Producto:</label>
-            <input type="file" id="imagen" accept="image/*" required>
-
-            <button type="submit">Agregar al Catálogo</button>
+            <!-- Bloque de tallas movido arriba del botón -->
+            <div class="form-grupo">
+                <label>Tallas disponibles:</label>
+                <div style="display: flex; gap: 15px; margin-top: 5px;">
+                    <label><input type="checkbox" name="tallas" value="S"> S</label>
+                    <label><input type="checkbox" name="tallas" value="M"> M</label>
+                    <label><input type="checkbox" name="tallas" value="L"> L</label>
+                    <label><input type="checkbox" name="tallas" value="XL"> XL</label>
+                </div>
+            </div>
+        
+            <button type="submit" class="btn-agregar">Agregar al Catálogo</button>
         </form>
 
         <p id="mensaje"></p>
+        <hr>
+        <h2>Inventario Actual</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Imagen</th>
+                    <th>Nombre</th>
+                    <th>Precio</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="lista-inventario">
+            </tbody>
+        </table>
     </div>
-
-    <script>
-        // Lógica de comunicación con el Backend
-        document.getElementById('formulario-producto').addEventListener('submit', async function(evento) {
-            evento.preventDefault(); // Evita que la página recargue al darle al botón
-
-            // Empaquetamos los datos del formulario, incluyendo el archivo físico de la imagen
-            const formData = new FormData();
-            formData.append('nombre', document.getElementById('nombre').value);
-            formData.append('precio', document.getElementById('precio').value);
-            formData.append('imagen', document.getElementById('imagen').files[0]);
-
-            try {
-                // Enviamos los datos a la ruta que programamos en server.js
-                const respuesta = await fetch('/api/productos', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (respuesta.ok) {
-                    document.getElementById('mensaje').textContent = "¡Producto guardado exitosamente en la base de datos!";
-                    document.getElementById('formulario-producto').reset(); // Limpia los campos
-                } else {
-                    document.getElementById('mensaje').style.color = "red";
-                    document.getElementById('mensaje').textContent = "Error al guardar el producto.";
-                }
-            } catch (error) {
-                console.error("Error de conexión:", error);
-            }
-        });
-    </script>
-
+    <script src="panel.js"></script>
 </body>
 </html>

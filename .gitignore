@@ -1,0 +1,8 @@
+# Ignorar dependencias de Node
+node_modules/
+
+# Ignorar la base de datos local SQLite
+tienda.db
+
+# Ignorar archivos ocultos de macOS
+.DS_Store

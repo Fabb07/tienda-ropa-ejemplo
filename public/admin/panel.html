@@ -1,0 +1,64 @@
+<!-- public/panel.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración Tienda de Ropa</title>
+    <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+    <div class="admin-box">
+        <h1>Gestión de Catálogo</h1>
+
+        <form id="formulario-producto" enctype="multipart/form-data">
+            <div class="form-grupo">
+                <label for="nombre">Nombre de la Prenda:</label>
+                <input type="text" id="nombre" name="nombre" required>
+            </div>
+            <div class="form-grupo">
+                <label for="precio">Precio (COP):</label>
+                <input type="number" id="precio" name="precio" required>
+            </div>
+            <div class="form-grupo">
+                <label for="descripcion">Descripción del Producto:</label>
+                <textarea id="descripcion" name="descripcion" rows="3"></textarea>
+            </div>
+            <div class="form-grupo">
+                <label for="imagenes">Fotografías del Producto (puedes seleccionar varias):</label>
+                <input type="file" id="imagenes" name="imagenes" accept="image/*" multiple required>
+            </div>
+            
+            <!-- Bloque de tallas movido arriba del botón -->
+            <div class="form-grupo">
+                <label>Tallas disponibles:</label>
+                <div style="display: flex; gap: 15px; margin-top: 5px;">
+                    <label><input type="checkbox" name="tallas" value="S"> S</label>
+                    <label><input type="checkbox" name="tallas" value="M"> M</label>
+                    <label><input type="checkbox" name="tallas" value="L"> L</label>
+                    <label><input type="checkbox" name="tallas" value="XL"> XL</label>
+                </div>
+            </div>
+        
+            <button type="submit" class="btn-agregar">Agregar al Catálogo</button>
+        </form>
+
+        <p id="mensaje"></p>
+        <hr>
+        <h2>Inventario Actual</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Imagen</th>
+                    <th>Nombre</th>
+                    <th>Precio</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="lista-inventario">
+            </tbody>
+        </table>
+    </div>
+    <script src="panel.js"></script>
+</body>
+</html>

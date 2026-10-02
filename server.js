@@ -9,6 +9,7 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { createClient } = require('@libsql/client');
 const jwt = require('jsonwebtoken');        // <-- Nueva librería para tokens
 const cookieParser = require('cookie-parser'); // <-- Nueva librería para leer cookies
+const bcrypt = require('bcrypt'); // <-- Nueva librería de encriptación
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,25 +20,30 @@ app.use(express.json());
 app.use(cookieParser()); // Activar la lectura de cookies en el servidor
 
 // --- 1. SISTEMA DE LOGIN Y GENERACIÓN DE TOKENS ---
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
-    
-    // Aquí defines tus credenciales maestras
-    if (username === 'admin' && password === 'tiendaejemplo2026') {
-        // Se crea un token digital con un tiempo de vida exacto de 30 minutos ('30m')
-        const token = jwt.sign({ rol: 'administrador' }, JWT_SECRET, { expiresIn: '30m' });
-        
-        // Se guarda el token en una cookie segura del navegador
-        res.cookie('token_acceso', token, {
-            httpOnly: true, // Evita robo de sesión vía JavaScript
-            maxAge: 30 * 60 * 1000 // La cookie se borra del navegador a los 30 min (en milisegundos)
-        });
-        return res.json({ mensaje: 'Autenticación exitosa' });
-    }
-    
-    res.status(401).json({ error: 'Credenciales inválidas' });
-});
 
+    const usuarioCorrecto = process.env.ADMIN_USERNAME;
+    const hashGuardado = process.env.ADMIN_PASSWORD_HASH;
+
+    if (username === usuarioCorrecto) {
+        const contrasenaValida = await bcrypt.compare(password, hashGuardado);
+
+        if (contrasenaValida) {
+            const token = jwt.sign({ rol: 'administrador' }, JWT_SECRET, { expiresIn: '30m' });
+
+            res.cookie('token_acceso', token, {
+                httpOnly: true,
+                maxAge: 30 * 60 * 1000
+            });
+            res.json({ mensaje: 'Autenticación exitosa' });
+        } else {
+            res.status(401).json({ error: 'Credenciales inválidas' });
+        }
+    } else {
+        res.status(401).json({ error: 'Credenciales inválidas' });
+    }
+});
 // Middleware que intercepta las rutas y verifica el tiempo del token
 const verificarSeguridad = (req, res, next) => {
     const token = req.cookies.token_acceso;
@@ -101,7 +107,6 @@ async function inicializarBaseDatos() {
 inicializarBaseDatos();
 
 // --- 5. RUTAS DE PRODUCTOS ---
-// Opcional: También podrías agregar 'verificarSeguridad' a los métodos POST, DELETE y PUT para doble protección.
 app.get('/api/productos', async (req, res) => {
     try {
         const resultado = await db.execute("SELECT * FROM productos");

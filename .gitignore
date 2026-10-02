@@ -6,3 +6,7 @@ tienda.db
 
 # Ignorar archivos ocultos de macOS
 .DS_Store
+
+
+#contraseñas y tokens de seguridad ( turso y cloudinary )
+.env

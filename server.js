@@ -132,8 +132,14 @@ async function inicializarBaseDatos() {
     try {
         await db.execute(`CREATE TABLE IF NOT EXISTS productos (
             id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL,
-            precio INTEGER NOT NULL, imagen TEXT NOT NULL, descripcion TEXT, tallas TEXT
+            precio INTEGER NOT NULL, imagen TEXT NOT NULL, descripcion TEXT, tallas TEXT, categoria TEXT
         )`);
+        
+        // Intenta añadir la columna a la tabla si es antigua (ignorará el error si ya existe)
+        try {
+            await db.execute("ALTER TABLE productos ADD COLUMN categoria TEXT DEFAULT 'general'");
+        } catch (e) {}
+
         console.log("Base de datos conectada en Turso.");
     } catch (err) { console.error("Error BD:", err.message); }
 }
@@ -155,36 +161,36 @@ app.delete('/api/productos/:id', verificarSeguridad, async (req, res) => {
 });
 
 app.post('/api/productos', verificarSeguridad, upload.array('imagenes', 5), async (req, res) => {
-    const { nombre, precio, descripcion } = req.body;
+    const { nombre, precio, descripcion, categoria } = req.body;
     let tallas = req.body.tallas ? (Array.isArray(req.body.tallas) ? req.body.tallas.join(',') : req.body.tallas) : '';
     const rutasImagenes = req.files && req.files.length > 0 ? req.files.map(file => file.path).join(',') : '';
 
     let mensajeError = null;
 
-    // 1. Validar Nombre (obligatorio, string, entre 2 y 100 caracteres)
     if (!nombre || typeof nombre !== 'string' || nombre.trim().length < 2 || nombre.trim().length > 100) {
         mensajeError = "El nombre del producto es obligatorio y debe tener entre 2 y 100 caracteres.";
     } else {
-        // 2. Validar Precio (número entero mayor a 0)
         const precioNum = Number(precio);
         if (isNaN(precioNum) || !Number.isInteger(precioNum) || precioNum <= 0) {
             mensajeError = "El precio debe ser un número entero mayor a 0.";
         } else {
-            // 3. Validar Descripción (máximo 500 caracteres si se proporciona)
-            if (descripcion && descripcion.length > 500) {
-                mensajeError = "La descripción no puede superar los 500 caracteres.";
+            if (!categoria) {
+                mensajeError = "Debe seleccionar una categoría para el producto.";
+            } else {
+                if (descripcion && descripcion.length > 500) {
+                    mensajeError = "La descripción no puede superar los 500 caracteres.";
+                }
             }
         }
     }
 
-    // Responder según el resultado de la validación
     if (mensajeError) {
         res.status(400).json({ error: mensajeError });
     } else {
         try {
             const resultado = await db.execute({
-                sql: "INSERT INTO productos (nombre, precio, imagen, descripcion, tallas) VALUES (?, ?, ?, ?, ?)",
-                args: [nombre.trim(), Number(precio), rutasImagenes, descripcion ? descripcion.trim() : '', tallas]
+                sql: "INSERT INTO productos (nombre, precio, imagen, descripcion, tallas, categoria) VALUES (?, ?, ?, ?, ?, ?)",
+                args: [nombre.trim(), Number(precio), rutasImagenes, descripcion ? descripcion.trim() : '', tallas, categoria]
             });
             res.json({ id: Number(resultado.lastInsertRowid), message: "Guardado con éxito" });
         } catch (err) {

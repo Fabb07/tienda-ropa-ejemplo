@@ -3,22 +3,41 @@ let imagenesActuales = [];
 let indiceImagenActual = 0;
 let productoSeleccionado = null;
 
-// Nuevas variables para la Paginación
+// Variables para la Paginación y Filtrado
 let todosLosProductos = [];
+let productosFiltrados = [];
 let paginaActual = 1;
 const PRODUCTOS_POR_PAGINA = 28;
+let filtroActual = 'todo';
 
 // Cargar datos desde el servidor
 async function cargarProductos() {
     try {
         const respuesta = await fetch('/api/productos');
         todosLosProductos = await respuesta.json(); 
+        productosFiltrados = todosLosProductos;
         paginaActual = 1;
         mostrarProductos(); 
     } catch (error) {
         console.error("Error cargando los productos:", error);
         document.getElementById('contenedor-productos').innerHTML = '<p>Error al cargar el catálogo desde el servidor.</p>';
     }
+}
+
+// Aplicar el filtro de navegación
+function aplicarFiltro(nuevoFiltro) {
+    filtroActual = nuevoFiltro;
+    paginaActual = 1;
+
+    if (filtroActual === 'todo') {
+        productosFiltrados = todosLosProductos;
+    } else if (filtroActual === 'novedades') {
+        productosFiltrados = todosLosProductos.slice().reverse().slice(0, 10);
+    } else {
+        productosFiltrados = todosLosProductos.filter(p => p.categoria === filtroActual);
+    }
+
+    mostrarProductos();
 }
 
 // Mostrar solo los productos de la página seleccionada
@@ -28,7 +47,7 @@ function mostrarProductos() {
 
     const inicio = (paginaActual - 1) * PRODUCTOS_POR_PAGINA;
     const fin = inicio + PRODUCTOS_POR_PAGINA;
-    const productosPagina = todosLosProductos.slice(inicio, fin);
+    const productosPagina = productosFiltrados.slice(inicio, fin);
 
     productosPagina.forEach(producto => {
         let primeraImagen = '';
@@ -48,7 +67,7 @@ function mostrarProductos() {
         img.src = primeraImagen;
         img.alt = producto.nombre;
 
-        // Crear y sanitizar el título (textContent previene XSS)
+        // Crear y sanitizar el título
         const h3 = document.createElement('h3');
         h3.textContent = producto.nombre;
 
@@ -73,7 +92,7 @@ function renderizarControlesPaginacion() {
     const contenedorPaginacion = document.getElementById('paginacion');
     contenedorPaginacion.innerHTML = '';
 
-    const totalPaginas = Math.ceil(todosLosProductos.length / PRODUCTOS_POR_PAGINA);
+    const totalPaginas = Math.ceil(productosFiltrados.length / PRODUCTOS_POR_PAGINA);
 
     if (totalPaginas > 1) {
         // Botón "Anterior"
@@ -136,7 +155,7 @@ function abrirModal(producto) {
         const listaTallas = producto.tallas.split(',');
         listaTallas.forEach(talla => {
             const spanTalla = document.createElement('span');
-            spanTalla.textContent = talla.trim(); // Seguro contra XSS
+            spanTalla.textContent = talla.trim(); 
             contenedorTallas.appendChild(spanTalla);
         });
     } else {
@@ -176,10 +195,28 @@ function cerrarModal() {
 }
 
 // --- Configuración Inicial y Eventos ---
-// Vinculamos los eventos de los botones del modal desde el JS
+// Vinculamos los eventos de los botones del modal
 document.getElementById('btn-cerrar-modal').addEventListener('click', cerrarModal);
 document.getElementById('btn-carrusel-izq').addEventListener('click', () => cambiarImagen(-1));
 document.getElementById('btn-carrusel-der').addEventListener('click', () => cambiarImagen(1));
+
+// Lógica del Menú Hamburguesa
+document.getElementById('btn-menu').addEventListener('click', () => {
+    const navLinks = document.getElementById('nav-links');
+    navLinks.classList.toggle('active');
+});
+
+// Lógica de los botones de navegación
+document.querySelectorAll('.nav-filtro').forEach(boton => {
+    boton.addEventListener('click', (e) => {
+        e.preventDefault();
+        const nuevoFiltro = e.target.getAttribute('data-filtro');
+        aplicarFiltro(nuevoFiltro);
+        
+        // Cierra el menú en la versión móvil tras seleccionar una opción
+        document.getElementById('nav-links').classList.remove('active');
+    });
+});
 
 // Inicializar la carga al abrir la web
 cargarProductos();

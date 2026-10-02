@@ -29,18 +29,27 @@
                 <input type="file" id="imagenes" name="imagenes" accept="image/*" multiple required>
             </div>
             
-            <!-- Bloque de tallas movido arriba del botón -->
+            <!-- Nuevo selector de categoría -->
             <div class="form-grupo">
-                <label>Tallas disponibles:</label>
-                <div style="display: flex; gap: 15px; margin-top: 5px;">
-                    <label><input type="checkbox" name="tallas" value="S"> S</label>
-                    <label><input type="checkbox" name="tallas" value="M"> M</label>
-                    <label><input type="checkbox" name="tallas" value="L"> L</label>
-                    <label><input type="checkbox" name="tallas" value="XL"> XL</label>
+                <label for="categoria">Categoría del Producto:</label>
+                <select id="categoria" name="categoria" required style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc;">
+                    <option value="" disabled selected>Selecciona el tipo de producto</option>
+                    <option value="camisetas">Camisetas / Tops</option>
+                    <option value="pantalones">Pantalones / Jeans</option>
+                    <option value="zapatos">Zapatos / Tenis</option>
+                    <option value="accesorios">Accesorios (Gafas, Lociones, etc.)</option>
+                </select>
+            </div>
+
+            <!-- Nuevo contenedor dinámico de tallas -->
+            <div class="form-grupo">
+                <label>Tallas disponibles (Se actualizan según la categoría):</label>
+                <div id="contenedor-tallas-dinamico" style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 5px;">
+                    <p style="color: #666; font-size: 14px;">Selecciona una categoría primero.</p>
                 </div>
             </div>
         
-            <button type="submit" class="btn-agregar">Agregar al Catálogo</button>
+            <button type="submit" class="btn-agregar" style="margin-top: 15px;">Agregar al Catálogo</button>
         </form>
 
         <p id="mensaje"></p>

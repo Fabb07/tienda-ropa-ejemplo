@@ -2,7 +2,6 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const cors = require('cors');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
@@ -33,7 +32,6 @@ if (!JWT_SECRET) {
     process.exit(1);
 }
 
-app.use(cors());
 app.use(express.json());
 app.use(cookieParser()); // Activar la lectura de cookies en el servidor
 

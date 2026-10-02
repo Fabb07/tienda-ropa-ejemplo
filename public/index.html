@@ -75,12 +75,14 @@
     <!-- Modal de Detalle de Producto -->
     <div id="modal-producto" class="modal">
         <div class="modal-contenido">
-            <span class="cerrar-modal" onclick="cerrarModal()">&times;</span>
+            <!-- Se reemplazó onclick por un ID seguro -->
+            <span class="cerrar-modal" id="btn-cerrar-modal">&times;</span>
             
             <div class="carrusel-contenedor">
-                <button class="flecha-carrusel izquierda" onclick="cambiarImagen(-1)">&#10094;</button>
+                <!-- Se reemplazaron onclick por IDs seguros -->
+                <button class="flecha-carrusel izquierda" id="btn-carrusel-izq">&#10094;</button>
                 <img id="modal-imagen" src="" alt="Producto">
-                <button class="flecha-carrusel derecha" onclick="cambiarImagen(1)">&#10095;</button>
+                <button class="flecha-carrusel derecha" id="btn-carrusel-der">&#10095;</button>
             </div>
 
             <h2 id="modal-nombre"></h2>
@@ -100,187 +102,7 @@
         </div>
     </div>
 
-    <script>
-        // Variables para el Modal
-        let imagenesActuales = [];
-        let indiceImagenActual = 0;
-        let productoSeleccionado = null;
-
-        // Nuevas variables para la Paginación
-        let todosLosProductos = [];
-        let paginaActual = 1;
-        const PRODUCTOS_POR_PAGINA = 28;
-
-        // Cargar datos desde el servidor
-        async function cargarProductos() {
-            try {
-                const respuesta = await fetch('/api/productos');
-                todosLosProductos = await respuesta.json(); 
-                paginaActual = 1;
-                mostrarProductos(); 
-            } catch (error) {
-                console.error("Error cargando los productos:", error);
-                document.getElementById('contenedor-productos').innerHTML = '<p>Error al cargar el catálogo desde el servidor.</p>';
-            }
-        }
-
-        // Mostrar solo los productos de la página seleccionada
-        function mostrarProductos() {
-            const contenedor = document.getElementById('contenedor-productos');
-            contenedor.innerHTML = ''; 
-
-            const inicio = (paginaActual - 1) * PRODUCTOS_POR_PAGINA;
-            const fin = inicio + PRODUCTOS_POR_PAGINA;
-            const productosPagina = todosLosProductos.slice(inicio, fin);
-
-            productosPagina.forEach(producto => {
-                let primeraImagen = '';
-                if (producto.imagen) {
-                    const lista = producto.imagen.split(',');
-                    primeraImagen = lista[0];
-                }
-
-                // Crear la etiqueta <article> de forma segura
-                const tarjeta = document.createElement('article');
-                tarjeta.classList.add('product-card');
-                tarjeta.style.cursor = 'pointer';
-                tarjeta.addEventListener('click', () => abrirModal(producto));
-
-                // Crear y sanitizar la imagen
-                const img = document.createElement('img');
-                img.src = primeraImagen;
-                img.alt = producto.nombre;
-
-                // Crear y sanitizar el título (textContent previene XSS)
-                const h3 = document.createElement('h3');
-                h3.textContent = producto.nombre;
-
-                // Crear y sanitizar el precio
-                const pPrecio = document.createElement('p');
-                pPrecio.classList.add('price');
-                pPrecio.textContent = `$${Number(producto.precio).toLocaleString('es-CO')} COP`;
-
-                // Ensamblar la tarjeta de manera segura
-                tarjeta.appendChild(img);
-                tarjeta.appendChild(h3);
-                tarjeta.appendChild(pPrecio);
-
-                contenedor.appendChild(tarjeta);
-            });
-
-            renderizarControlesPaginacion();
-        }
-
-        // Generar los botones de navegación numéricos
-        function renderizarControlesPaginacion() {
-            const contenedorPaginacion = document.getElementById('paginacion');
-            contenedorPaginacion.innerHTML = '';
-
-            const totalPaginas = Math.ceil(todosLosProductos.length / PRODUCTOS_POR_PAGINA);
-
-            if (totalPaginas > 1) {
-                // Botón "Anterior"
-                const btnAnterior = document.createElement('button');
-                btnAnterior.textContent = '« Anterior';
-                btnAnterior.disabled = (paginaActual === 1);
-                btnAnterior.addEventListener('click', () => {
-                    if (paginaActual > 1) {
-                        paginaActual--;
-                        mostrarProductos();
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }
-                });
-                contenedorPaginacion.appendChild(btnAnterior);
-
-                // Botones Numerados
-                for (let i = 1; i <= totalPaginas; i++) {
-                    const btnNumero = document.createElement('button');
-                    btnNumero.textContent = i;
-                    if (i === paginaActual) {
-                        btnNumero.classList.add('activo');
-                    }
-                    btnNumero.addEventListener('click', () => {
-                        paginaActual = i;
-                        mostrarProductos();
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    });
-                    contenedorPaginacion.appendChild(btnNumero);
-                }
-
-                // Botón "Siguiente"
-                const btnSiguiente = document.createElement('button');
-                btnSiguiente.textContent = 'Siguiente »';
-                btnSiguiente.disabled = (paginaActual === totalPaginas);
-                btnSiguiente.addEventListener('click', () => {
-                    if (paginaActual < totalPaginas) {
-                        paginaActual++;
-                        mostrarProductos();
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }
-                });
-                contenedorPaginacion.appendChild(btnSiguiente);
-            }
-        }
-
-        // --- Funciones del Modal ---
-        function abrirModal(producto) {
-            productoSeleccionado = producto;
-            imagenesActuales = producto.imagen ? producto.imagen.split(',') : [];
-            indiceImagenActual = 0;
-
-            document.getElementById('modal-nombre').innerText = producto.nombre;
-            document.getElementById('modal-precio').innerText = `$${Number(producto.precio).toLocaleString('es-CO')} COP`;
-            document.getElementById('modal-descripcion').innerText = producto.descripcion || 'Sin descripción disponible.';
-
-            const contenedorTallas = document.querySelector('.tallas-list');
-            contenedorTallas.innerHTML = ''; 
-                    
-            if (producto.tallas) {
-                const listaTallas = producto.tallas.split(',');
-                listaTallas.forEach(talla => {
-                    const spanTalla = document.createElement('span');
-                    spanTalla.textContent = talla.trim(); // Seguro contra XSS
-                    contenedorTallas.appendChild(spanTalla);
-                });
-            } else {
-                const spanUnica = document.createElement('span');
-                spanUnica.textContent = 'Única';
-                contenedorTallas.appendChild(spanUnica);
-            }
-
-            actualizarImagenCarrusel();
-
-            const flechas = document.querySelectorAll('.flecha-carrusel');
-            flechas.forEach(f => f.style.display = imagenesActuales.length > 1 ? 'block' : 'none');
-
-            const numeroTelefono = "573001234567"; 
-            const mensaje = encodeURIComponent(`Hola, estoy interesado en el producto "${producto.nombre}" con precio de $${producto.precio}.`);
-            document.getElementById('modal-whatsapp').href = `https://wa.me/${numeroTelefono}?text=${mensaje}`;
-
-            document.getElementById('modal-producto').style.display = 'flex';
-        }
-
-        function cambiarImagen(direccion) {
-            if (imagenesActuales.length > 1) {
-                indiceImagenActual = (indiceImagenActual + direccion + imagenesActuales.length) % imagenesActuales.length;
-                actualizarImagenCarrusel();
-            }
-        }
-
-        function actualizarImagenCarrusel() {
-            const imgElement = document.getElementById('modal-imagen');
-            if (imagenesActuales.length > 0) {
-                imgElement.src = imagenesActuales[indiceImagenActual];
-            }
-        }
-
-        function cerrarModal() {
-            document.getElementById('modal-producto').style.display = 'none';
-        }
-    
-        // Inicializar la carga al abrir la web
-        cargarProductos();
-    </script>
-    
+    <!-- Archivo JS externo cargado con defer -->
+    <script src="index.js" defer></script>
 </body>
 </html>

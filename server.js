@@ -10,6 +10,7 @@ const { createClient } = require('@libsql/client');
 const jwt = require('jsonwebtoken');        // <-- Nueva librería para tokens
 const cookieParser = require('cookie-parser'); // <-- Nueva librería para leer cookies
 const bcrypt = require('bcrypt'); // <-- Nueva librería de encriptación
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,8 +26,18 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser()); // Activar la lectura de cookies en el servidor
 
+// Configuración de límite de intentos para el login
+const limitadorLogin = rateLimit({
+    windowMs: 15 * 60 * 1000, // Tiempo de bloqueo: 15 minutos
+    max: 5, // Límite de 5 intentos por IP en esa ventana de tiempo
+    message: { error: 'Demasiados intentos fallidos. Por favor, espera 15 minutos antes de volver a intentarlo.' },
+    standardHeaders: true, 
+    legacyHeaders: false,
+});
+
+
 // --- 1. SISTEMA DE LOGIN Y GENERACIÓN DE TOKENS ---
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', limitadorLogin, async (req, res) => {
     const { username, password } = req.body;
 
     const usuarioCorrecto = process.env.ADMIN_USERNAME;

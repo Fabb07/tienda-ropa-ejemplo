@@ -38,8 +38,13 @@ app.post('/api/login', async (req, res) => {
         if (contrasenaValida) {
             const token = jwt.sign({ rol: 'administrador' }, JWT_SECRET, { expiresIn: '30m' });
 
+            // Detecta si el servidor está en Render o en tu Mac local
+            const esProduccion = process.env.NODE_ENV === 'production';
+
             res.cookie('token_acceso', token, {
-                httpOnly: true,
+                httpOnly: true, // Evita robo de cookie mediante JavaScript
+                secure: esProduccion, // true en Render (HTTPS), false en tu Mac (HTTP)
+                sameSite: 'lax', // Protege contra ataques de falsificación de peticiones (CSRF)
                 maxAge: 30 * 60 * 1000
             });
             res.json({ mensaje: 'Autenticación exitosa' });
@@ -50,6 +55,8 @@ app.post('/api/login', async (req, res) => {
         res.status(401).json({ error: 'Credenciales inválidas' });
     }
 });
+
+
 // Middleware que intercepta las rutas y verifica el tiempo del token
 const verificarSeguridad = (req, res, next) => {
     const token = req.cookies.token_acceso;

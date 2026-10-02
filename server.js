@@ -159,13 +159,38 @@ app.post('/api/productos', verificarSeguridad, upload.array('imagenes', 5), asyn
     let tallas = req.body.tallas ? (Array.isArray(req.body.tallas) ? req.body.tallas.join(',') : req.body.tallas) : '';
     const rutasImagenes = req.files && req.files.length > 0 ? req.files.map(file => file.path).join(',') : '';
 
-    try {
-        const resultado = await db.execute({
-            sql: "INSERT INTO productos (nombre, precio, imagen, descripcion, tallas) VALUES (?, ?, ?, ?, ?)",
-            args: [nombre, precio, rutasImagenes, descripcion || '', tallas]
-        });
-        res.json({ id: Number(resultado.lastInsertRowid), message: "Guardado con éxito" });
-    } catch (err) { res.status(400).json({ error: err.message }); }
+    let mensajeError = null;
+
+    // 1. Validar Nombre (obligatorio, string, entre 2 y 100 caracteres)
+    if (!nombre || typeof nombre !== 'string' || nombre.trim().length < 2 || nombre.trim().length > 100) {
+        mensajeError = "El nombre del producto es obligatorio y debe tener entre 2 y 100 caracteres.";
+    } else {
+        // 2. Validar Precio (número entero mayor a 0)
+        const precioNum = Number(precio);
+        if (isNaN(precioNum) || !Number.isInteger(precioNum) || precioNum <= 0) {
+            mensajeError = "El precio debe ser un número entero mayor a 0.";
+        } else {
+            // 3. Validar Descripción (máximo 500 caracteres si se proporciona)
+            if (descripcion && descripcion.length > 500) {
+                mensajeError = "La descripción no puede superar los 500 caracteres.";
+            }
+        }
+    }
+
+    // Responder según el resultado de la validación
+    if (mensajeError) {
+        res.status(400).json({ error: mensajeError });
+    } else {
+        try {
+            const resultado = await db.execute({
+                sql: "INSERT INTO productos (nombre, precio, imagen, descripcion, tallas) VALUES (?, ?, ?, ?, ?)",
+                args: [nombre.trim(), Number(precio), rutasImagenes, descripcion ? descripcion.trim() : '', tallas]
+            });
+            res.json({ id: Number(resultado.lastInsertRowid), message: "Guardado con éxito" });
+        } catch (err) {
+            res.status(400).json({ error: err.message });
+        }
+    }
 });
 
 app.put('/api/productos/:id', verificarSeguridad, async (req, res) => {

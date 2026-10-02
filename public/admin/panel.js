@@ -66,19 +66,52 @@ function mostrarInventario() {
             miniatura = listaImagenes[0]; 
         }
 
-        const fila = `
-            <tr>
-                <td><img src="${miniatura}" class="miniatura" alt="Vista previa" style="width: 50px; border-radius: 4px;"></td>
-                <td>${producto.nombre}</td>
-                <td>$${Number(producto.precio).toLocaleString('es-CO')}</td>
-                <td>
-                    <button class="btn-editar" onclick="editarPrecio(${producto.id}, ${producto.precio})">Precio</button>
-                    <button class="btn-editar" onclick="editarTallas(${producto.id}, '${producto.tallas || ''}')">Tallas</button>
-                    <button class="btn-eliminar" onclick="eliminarProducto(${producto.id})">Eliminar</button>
-                </td>
-            </tr>
-        `;
-        tabla.innerHTML += fila;
+        // Crear elementos de la fila de forma segura
+        const fila = document.createElement('tr');
+
+        const tdImg = document.createElement('td');
+        const img = document.createElement('img');
+        img.src = miniatura;
+        img.className = 'miniatura';
+        img.alt = 'Vista previa';
+        img.style.width = '50px';
+        img.style.borderRadius = '4px';
+        tdImg.appendChild(img);
+
+        const tdNombre = document.createElement('td');
+        tdNombre.textContent = producto.nombre; // Protegido contra XSS
+
+        const tdPrecio = document.createElement('td');
+        tdPrecio.textContent = `$${Number(producto.precio).toLocaleString('es-CO')}`; // Protegido contra XSS
+
+        const tdAcciones = document.createElement('td');
+        
+        const btnPrecio = document.createElement('button');
+        btnPrecio.className = 'btn-editar';
+        btnPrecio.textContent = 'Precio';
+        btnPrecio.addEventListener('click', () => editarPrecio(producto.id, producto.precio));
+
+        const btnTallas = document.createElement('button');
+        btnTallas.className = 'btn-editar';
+        btnTallas.textContent = 'Tallas';
+        btnTallas.addEventListener('click', () => editarTallas(producto.id, producto.tallas || ''));
+
+        const btnEliminar = document.createElement('button');
+        btnEliminar.className = 'btn-eliminar';
+        btnEliminar.textContent = 'Eliminar';
+        btnEliminar.addEventListener('click', () => eliminarProducto(producto.id));
+
+        tdAcciones.appendChild(btnPrecio);
+        tdAcciones.appendChild(btnTallas);
+        tdAcciones.appendChild(btnEliminar);
+
+        // Adjuntar celdas a la fila
+        fila.appendChild(tdImg);
+        fila.appendChild(tdNombre);
+        fila.appendChild(tdPrecio);
+        fila.appendChild(tdAcciones);
+
+        tabla.appendChild(fila);
     });
 
     renderizarControlesPaginacion();

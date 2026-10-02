@@ -140,15 +140,32 @@
                     primeraImagen = lista[0];
                 }
 
-                const tarjetaHTML = `
-                    <article class="product-card" onclick='abrirModal(${JSON.stringify(producto)})' style="cursor: pointer;">
-                        <img src="${primeraImagen}" alt="${producto.nombre}">
-                        <h3>${producto.nombre}</h3>
-                        <p class="price">$${producto.precio.toLocaleString('es-CO')} COP</p>
-                    </article>
-                `;
-                
-                contenedor.innerHTML += tarjetaHTML;
+                // Crear la etiqueta <article> de forma segura
+                const tarjeta = document.createElement('article');
+                tarjeta.classList.add('product-card');
+                tarjeta.style.cursor = 'pointer';
+                tarjeta.addEventListener('click', () => abrirModal(producto));
+
+                // Crear y sanitizar la imagen
+                const img = document.createElement('img');
+                img.src = primeraImagen;
+                img.alt = producto.nombre;
+
+                // Crear y sanitizar el título (textContent previene XSS)
+                const h3 = document.createElement('h3');
+                h3.textContent = producto.nombre;
+
+                // Crear y sanitizar el precio
+                const pPrecio = document.createElement('p');
+                pPrecio.classList.add('price');
+                pPrecio.textContent = `$${Number(producto.precio).toLocaleString('es-CO')} COP`;
+
+                // Ensamblar la tarjeta de manera segura
+                tarjeta.appendChild(img);
+                tarjeta.appendChild(h3);
+                tarjeta.appendChild(pPrecio);
+
+                contenedor.appendChild(tarjeta);
             });
 
             renderizarControlesPaginacion();
@@ -221,10 +238,14 @@
             if (producto.tallas) {
                 const listaTallas = producto.tallas.split(',');
                 listaTallas.forEach(talla => {
-                    contenedorTallas.innerHTML += `<span>${talla}</span>`;
+                    const spanTalla = document.createElement('span');
+                    spanTalla.textContent = talla.trim(); // Seguro contra XSS
+                    contenedorTallas.appendChild(spanTalla);
                 });
             } else {
-                contenedorTallas.innerHTML = '<span>Única</span>'; 
+                const spanUnica = document.createElement('span');
+                spanUnica.textContent = 'Única';
+                contenedorTallas.appendChild(spanUnica);
             }
 
             actualizarImagenCarrusel();

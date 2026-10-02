@@ -13,7 +13,13 @@ const bcrypt = require('bcrypt'); // <-- Nueva librería de encriptación
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'urbana_seguridad_extrema_2026';
+
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    console.error("ERROR FATAL: JWT_SECRET no está definido en las variables de entorno. Servidor detenido.");
+    process.exit(1);
+}
 
 app.use(cors());
 app.use(express.json());

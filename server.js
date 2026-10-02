@@ -11,9 +11,20 @@ const jwt = require('jsonwebtoken');        // <-- Nueva librería para tokens
 const cookieParser = require('cookie-parser'); // <-- Nueva librería para leer cookies
 const bcrypt = require('bcrypt'); // <-- Nueva librería de encriptación
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet'); // <-- Nueva capa de seguridad HTTP
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Configuración de Helmet con soporte para imágenes externas de Cloudinary
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "img-src": ["'self'", "data:", "https://res.cloudinary.com"],
+        },
+    },
+}));
 
 const JWT_SECRET = process.env.JWT_SECRET;
 

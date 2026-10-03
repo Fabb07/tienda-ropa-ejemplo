@@ -162,6 +162,42 @@ app.post('/api/productos', verificarSeguridad, upload.array('imagenes', 5), asyn
     }
 });
 
+
+// --- NUEVAS RUTAS PARA EDITAR ---
+// Actualizar precio de un producto
+app.put('/api/productos/:id/precio', verificarSeguridad, async (req, res) => {
+    const { precio } = req.body;
+    const precioNum = Number(precio);
+    
+    if (isNaN(precioNum) || !Number.isInteger(precioNum) || precioNum <= 0) {
+        return res.status(400).json({ error: "El precio debe ser un número entero mayor a 0." });
+    }
+    
+    try {
+        await db.execute({ 
+            sql: "UPDATE productos SET precio = ? WHERE id = ?", 
+            args: [precioNum, req.params.id] 
+        });
+        res.json({ message: "Precio actualizado con éxito" });
+    } catch (err) { 
+        res.status(500).json({ error: err.message }); 
+    }
+});
+
+// Actualizar tallas de un producto
+app.put('/api/productos/:id/tallas', verificarSeguridad, async (req, res) => {
+    const { tallas } = req.body;
+    try {
+        await db.execute({ 
+            sql: "UPDATE productos SET tallas = ? WHERE id = ?", 
+            args: [tallas, req.params.id] 
+        });
+        res.json({ message: "Tallas actualizadas con éxito" });
+    } catch (err) { 
+        res.status(500).json({ error: err.message }); 
+    }
+});
+
 app.delete('/api/productos/:id', verificarSeguridad, async (req, res) => {
     try {
         await db.execute({ sql: "DELETE FROM productos WHERE id = ?", args: [req.params.id] });

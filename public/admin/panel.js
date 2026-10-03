@@ -119,12 +119,30 @@ function mostrarInventario() {
         const tdPrecio = document.createElement('td');
         tdPrecio.textContent = `$${Number(producto.precio).toLocaleString('es-CO')}`;
 
+        // --- RESTAURACIÓN DE BOTONES DE ACCIÓN ---
         const tdAcciones = document.createElement('td');
+        
+        const btnPrecio = document.createElement('button');
+        btnPrecio.textContent = 'Precio';
+        btnPrecio.style.marginRight = '5px';
+        btnPrecio.style.padding = '3px 8px';
+        btnPrecio.addEventListener('click', () => editarPrecio(producto.id, producto.precio));
+
+        const btnTallas = document.createElement('button');
+        btnTallas.textContent = 'Tallas';
+        btnTallas.style.marginRight = '5px';
+        btnTallas.style.padding = '3px 8px';
+        btnTallas.addEventListener('click', () => editarTallas(producto.id, producto.tallas || ''));
+
         const btnEliminar = document.createElement('button');
         btnEliminar.className = 'btn-eliminar';
         btnEliminar.textContent = 'Eliminar';
         btnEliminar.addEventListener('click', () => eliminarProducto(producto.id));
+        
+        tdAcciones.appendChild(btnPrecio);
+        tdAcciones.appendChild(btnTallas);
         tdAcciones.appendChild(btnEliminar);
+        // ------------------------------------------
 
         fila.appendChild(tdImg);
         fila.appendChild(tdNombre);
@@ -135,6 +153,52 @@ function mostrarInventario() {
     });
 
     renderizarControlesPaginacionAdmin();
+}
+
+// --- NUEVAS FUNCIONES DE EDICIÓN ---
+async function editarPrecio(id, precioActual) {
+    const nuevoPrecio = prompt(`Ingresa el nuevo precio (Precio actual: $${precioActual}):`, precioActual);
+    
+    if (nuevoPrecio !== null && nuevoPrecio.trim() !== '') {
+        try {
+            const response = await fetch(`/api/productos/${id}/precio`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ precio: nuevoPrecio })
+            });
+            
+            if (response.ok) {
+                cargarInventario(); // Recarga la tabla para mostrar el nuevo precio
+            } else {
+                const data = await response.json();
+                alert('Error al actualizar el precio: ' + data.error);
+            }
+        } catch (error) {
+            alert('Error de conexión con el servidor.');
+        }
+    }
+}
+
+async function editarTallas(id, tallasActuales) {
+    const nuevasTallas = prompt(`Ingresa las nuevas tallas separadas por coma (Actuales: ${tallasActuales}):`, tallasActuales);
+    
+    if (nuevasTallas !== null) {
+        try {
+            const response = await fetch(`/api/productos/${id}/tallas`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tallas: nuevasTallas })
+            });
+            
+            if (response.ok) {
+                cargarInventario(); // Recarga la tabla silenciosamente
+            } else {
+                alert('Error al actualizar las tallas.');
+            }
+        } catch (error) {
+            alert('Error de conexión con el servidor.');
+        }
+    }
 }
 
 function renderizarControlesPaginacionAdmin() {

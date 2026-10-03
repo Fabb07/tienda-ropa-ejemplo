@@ -1,11 +1,11 @@
-<!-- public/panel.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración Tienda de Ropa</title>
-    <link rel="stylesheet" href="panel.css">
+    <title>Panel de Administración</title>
+    <!-- Ruta corregida con / inicial -->
+    <link rel="stylesheet" href="/panel.css">
 </head>
 <body>
     <div class="admin-box">
@@ -29,7 +29,6 @@
                 <input type="file" id="imagenes" name="imagenes" accept="image/*" multiple required>
             </div>
             
-            <!-- Nuevo selector de categoría -->
             <div class="form-grupo">
                 <label for="categoria">Categoría del Producto:</label>
                 <select id="categoria" name="categoria" required style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc;">
@@ -41,9 +40,8 @@
                 </select>
             </div>
 
-            <!-- Nuevo contenedor dinámico de tallas -->
             <div class="form-grupo">
-                <label>Tallas disponibles (Se actualizan según la categoría):</label>
+                <label>Tallas disponibles:</label>
                 <div id="contenedor-tallas-dinamico" style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 5px;">
                     <p style="color: #666; font-size: 14px;">Selecciona una categoría primero.</p>
                 </div>
@@ -64,10 +62,9 @@
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody id="lista-inventario">
-            </tbody>
+            <tbody id="lista-inventario"></tbody>
         </table>
     </div>
-    <script src="panel.js"></script>
+    <script src="/admin/panel.js"></script>
 </body>
 </html>

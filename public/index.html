@@ -4,45 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tienda de Ropa</title>
-    <link rel="stylesheet" href="styles.css">
-    
-    <!-- Estilos específicos para los botones de paginación -->
-    <style>
-        .paginacion-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            margin: 40px 0;
-        }
-        .paginacion-container button {
-            padding: 8px 14px;
-            border: 1px solid #ccc;
-            background-color: #ffffff;
-            color: #333333;
-            font-size: 14px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .paginacion-container button:hover:not(:disabled) {
-            background-color: #222222;
-            color: #ffffff;
-            border-color: #222222;
-        }
-        .paginacion-container button.activo {
-            background-color: #222222;
-            color: #ffffff;
-            border-color: #222222;
-            font-weight: bold;
-        }
-        .paginacion-container button:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-    </style>
+    <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+    <nav class="navbar">
+        <div class="logo">Urbana</div>
+        <button class="menu-toggle" id="btn-menu">☰</button>
+        <ul class="nav-links" id="nav-links">
+            <li><a href="#" class="nav-filtro" data-filtro="todo">INICIO</a></li>
+            <li><a href="#" class="nav-filtro" data-filtro="novedades">NOVEDADES</a></li>
+            <li><a href="#" class="nav-filtro" data-filtro="camisetas">CAMISETAS</a></li>
+            <li><a href="#" class="nav-filtro" data-filtro="pantalones">PANTALONES</a></li>
+            <li><a href="#" class="nav-filtro" data-filtro="zapatos">ZAPATOS</a></li>
+            <li><a href="#" class="nav-filtro" data-filtro="accesorios">ACCESORIOS</a></li>
+            <li><a href="#contacto">CONTACTO</a></li>
+        </ul>
+    </nav>
 
     <header>
         <h1>Tienda ropa ejemplo</h1>
@@ -51,17 +28,11 @@
 
     <section class="featured-collection">
         <h2>Artículos Disponibles</h2>
-        
-        <div class="product-gallery" id="contenedor-productos">
-            <!-- JavaScript inyectará las tarjetas aquí automáticamente -->
-        </div>
-
-        <!-- Nuevo contenedor para los botones de paginación -->
+        <div class="product-gallery" id="contenedor-productos"></div>
         <div id="paginacion" class="paginacion-container"></div>
-        
     </section>
 
-    <section class="informacion">
+    <section class="informacion" id="contacto">
         <h2>Encuéntranos</h2>
         <p><strong>Dirección:</strong> Calle 123 #45-67, Cali, Colombia.</p>
         <p><strong>Horario:</strong> Lunes a Sábado de 10:00 AM a 8:00 PM</p>
@@ -72,37 +43,25 @@
         <p>&copy; 2026 Tienda de Ropa. Todos los derechos reservados.</p>
     </footer>
 
-    <!-- Modal de Detalle de Producto -->
     <div id="modal-producto" class="modal">
         <div class="modal-contenido">
-            <!-- Se reemplazó onclick por un ID seguro -->
             <span class="cerrar-modal" id="btn-cerrar-modal">&times;</span>
-            
             <div class="carrusel-contenedor">
-                <!-- Se reemplazaron onclick por IDs seguros -->
                 <button class="flecha-carrusel izquierda" id="btn-carrusel-izq">&#10094;</button>
                 <img id="modal-imagen" src="" alt="Producto">
                 <button class="flecha-carrusel derecha" id="btn-carrusel-der">&#10095;</button>
             </div>
-
             <h2 id="modal-nombre"></h2>
             <p id="modal-precio" class="precio-modal"></p>
             <p id="modal-descripcion"></p>
-
             <div class="tallas-contenedor">
                 <label>Tallas disponibles:</label>
-                <div class="tallas-list">
-                    <!-- JavaScript inyectará las tallas aquí -->
-                </div>
+                <div class="tallas-list"></div>
             </div>
-
-            <a id="modal-whatsapp" href="#" target="_blank" class="btn-whatsapp">
-                Consultar por WhatsApp
-            </a>
+            <a id="modal-whatsapp" href="#" target="_blank" class="btn-whatsapp">Consultar por WhatsApp</a>
         </div>
     </div>
 
-    <!-- Archivo JS externo cargado con defer -->
-    <script src="index.js" defer></script>
+    <script src="/index.js" defer></script>
 </body>
 </html>

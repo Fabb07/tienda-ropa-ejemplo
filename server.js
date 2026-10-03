@@ -1,4 +1,3 @@
-// server.js
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
@@ -6,16 +5,22 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { createClient } = require('@libsql/client');
-const jwt = require('jsonwebtoken');        // <-- Nueva librería para tokens
-const cookieParser = require('cookie-parser'); // <-- Nueva librería para leer cookies
-const bcrypt = require('bcrypt'); // <-- Nueva librería de encriptación
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
 const rateLimit = require('express-rate-limit');
-const helmet = require('helmet'); // <-- Nueva capa de seguridad HTTP
+const helmet = require('helmet');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuración de Helmet con soporte para imágenes externas de Cloudinary
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    console.error("ERROR FATAL: JWT_SECRET no está definido. Servidor detenido.");
+    process.exit(1);
+}
+
+// Configuración de Helmet estricto (ya no permite scripts en línea)
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -25,47 +30,84 @@ app.use(helmet({
     },
 }));
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-    console.error("ERROR FATAL: JWT_SECRET no está definido en las variables de entorno. Servidor detenido.");
-    process.exit(1);
-}
-
 app.use(express.json());
-app.use(cookieParser()); // Activar la lectura de cookies en el servidor
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Configuración de límite de intentos para el login
+// Rate Limiting para Login
 const limitadorLogin = rateLimit({
-    windowMs: 15 * 60 * 1000, // Tiempo de bloqueo: 15 minutos
-    max: 5, // Límite de 5 intentos por IP en esa ventana de tiempo
-    message: { error: 'Demasiados intentos fallidos. Por favor, espera 15 minutos antes de volver a intentarlo.' },
+    windowMs: 15 * 60 * 1000, 
+    max: 5, 
+    message: { error: 'Demasiados intentos fallidos. Por favor, espera 15 minutos.' },
     standardHeaders: true, 
     legacyHeaders: false,
 });
 
+// Configuración Turso
+const db = createClient({
+    url: process.env.TURSO_DATABASE_URL,
+    authToken: process.env.TURSO_AUTH_TOKEN
+});
 
-// --- 1. SISTEMA DE LOGIN Y GENERACIÓN DE TOKENS ---
+async function inicializarBaseDatos() {
+    try {
+        await db.execute(`CREATE TABLE IF NOT EXISTS productos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL,
+            precio INTEGER NOT NULL, imagen TEXT NOT NULL, descripcion TEXT, tallas TEXT, categoria TEXT
+        )`);
+        
+        // Intenta añadir la columna a la tabla si no existe
+        try {
+            await db.execute("ALTER TABLE productos ADD COLUMN categoria TEXT DEFAULT 'general'");
+        } catch (e) {}
+
+        console.log("Base de datos conectada en Turso.");
+    } catch (err) { console.error("Error BD:", err.message); }
+}
+inicializarBaseDatos();
+
+// Configuración Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: { folder: 'tienda_ropa', allowed_formats: ['jpg', 'png', 'jpeg', 'webp'] }
+});
+const upload = multer({ storage: storage });
+
+// Middleware de autenticación
+function verificarSeguridad(req, res, next) {
+    const token = req.cookies.token_acceso;
+    if (!token) return res.status(401).json({ error: 'Acceso denegado' });
+    try {
+        jwt.verify(token, JWT_SECRET);
+        next();
+    } catch (error) {
+        res.status(401).json({ error: 'Token inválido' });
+    }
+}
+
+// Rutas
 app.post('/api/login', limitadorLogin, async (req, res) => {
     const { username, password } = req.body;
-
     const usuarioCorrecto = process.env.ADMIN_USERNAME;
     const hashGuardado = process.env.ADMIN_PASSWORD_HASH;
 
     if (username === usuarioCorrecto) {
         const contrasenaValida = await bcrypt.compare(password, hashGuardado);
-
         if (contrasenaValida) {
-            const token = jwt.sign({ rol: 'administrador' }, JWT_SECRET, { expiresIn: '30m' });
-
-            // Detecta si el servidor está en Render o en tu Mac local
+            const token = jwt.sign({ rol: 'administrador' }, JWT_SECRET, { expiresIn: '8h' });
             const esProduccion = process.env.NODE_ENV === 'production';
-
+            
             res.cookie('token_acceso', token, {
-                httpOnly: true, // Evita robo de cookie mediante JavaScript
-                secure: esProduccion, // true en Render (HTTPS), false en tu Mac (HTTP)
-                sameSite: 'lax', // Protege contra ataques de falsificación de peticiones (CSRF)
-                maxAge: 30 * 60 * 1000
+                httpOnly: true, 
+                secure: esProduccion, 
+                sameSite: 'lax', 
+                maxAge: 8 * 60 * 60 * 1000
             });
             res.json({ mensaje: 'Autenticación exitosa' });
         } else {
@@ -76,88 +118,11 @@ app.post('/api/login', limitadorLogin, async (req, res) => {
     }
 });
 
-
-// Middleware que intercepta las rutas y verifica el tiempo del token
-const verificarSeguridad = (req, res, next) => {
-    const token = req.cookies.token_acceso;
-    let accesoConcedido = false;
-    
-    if (token) {
-        try {
-            jwt.verify(token, JWT_SECRET);
-            accesoConcedido = true;
-        } catch (err) {
-            res.clearCookie('token_acceso');
-        }
-    }
-
-    if (accesoConcedido) {
-        next();
-    } else if (req.originalUrl.startsWith('/api/')) {
-        // Si el intruso ataca directo a la API, se bloquea con formato JSON
-        res.status(401).json({ error: 'Acceso no autorizado a la base de datos' });
-    } else {
-        // Si el usuario entra al panel web sin sesión, se envía al login
-        res.redirect('/login.html');
-    }
-};
-
-// --- 2. PROTEGER LAS RUTAS DE ADMINISTRACIÓN ---
-// Cualquier intento de acceder a archivos dentro de la carpeta admin debe pasar por el filtro
-app.use('/admin', verificarSeguridad);
-
-// --- 3. SERVIR ARCHIVOS ESTÁTICOS ---
-app.use(express.static(path.join(__dirname, 'public')));
-
-
-// --- 4. CONFIGURACIÓN DE CLOUDINARY Y TURSO (Sin cambios) ---
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: { folder: 'urbana-productos', allowed_formats: ['jpg', 'png', 'jpeg', 'webp'] }
-});
-const upload = multer({ storage: storage });
-
-const db = createClient({
-    url: process.env.TURSO_DATABASE_URL,
-    authToken: process.env.TURSO_AUTH_TOKEN,
-});
-
-async function inicializarBaseDatos() {
-    try {
-        await db.execute(`CREATE TABLE IF NOT EXISTS productos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL,
-            precio INTEGER NOT NULL, imagen TEXT NOT NULL, descripcion TEXT, tallas TEXT, categoria TEXT
-        )`);
-        
-        // Intenta añadir la columna a la tabla si es antigua (ignorará el error si ya existe)
-        try {
-            await db.execute("ALTER TABLE productos ADD COLUMN categoria TEXT DEFAULT 'general'");
-        } catch (e) {}
-
-        console.log("Base de datos conectada en Turso.");
-    } catch (err) { console.error("Error BD:", err.message); }
-}
-inicializarBaseDatos();
-
-// --- 5. RUTAS DE PRODUCTOS ---
 app.get('/api/productos', async (req, res) => {
     try {
-        const resultado = await db.execute("SELECT * FROM productos");
+        const resultado = await db.execute("SELECT * FROM productos ORDER BY id DESC");
         res.json(resultado.rows);
     } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.delete('/api/productos/:id', verificarSeguridad, async (req, res) => {
-    try {
-        const resultado = await db.execute({ sql: "DELETE FROM productos WHERE id = ?", args: [req.params.id] });
-        res.json({ message: "Producto eliminado", cambios: resultado.rowsAffected });
-    } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
 app.post('/api/productos', verificarSeguridad, upload.array('imagenes', 5), async (req, res) => {
@@ -168,17 +133,17 @@ app.post('/api/productos', verificarSeguridad, upload.array('imagenes', 5), asyn
     let mensajeError = null;
 
     if (!nombre || typeof nombre !== 'string' || nombre.trim().length < 2 || nombre.trim().length > 100) {
-        mensajeError = "El nombre del producto es obligatorio y debe tener entre 2 y 100 caracteres.";
+        mensajeError = "El nombre es obligatorio (2 a 100 caracteres).";
     } else {
         const precioNum = Number(precio);
         if (isNaN(precioNum) || !Number.isInteger(precioNum) || precioNum <= 0) {
             mensajeError = "El precio debe ser un número entero mayor a 0.";
         } else {
             if (!categoria) {
-                mensajeError = "Debe seleccionar una categoría para el producto.";
+                mensajeError = "Debe seleccionar una categoría.";
             } else {
                 if (descripcion && descripcion.length > 500) {
-                    mensajeError = "La descripción no puede superar los 500 caracteres.";
+                    mensajeError = "La descripción no puede superar 500 caracteres.";
                 }
             }
         }
@@ -192,25 +157,16 @@ app.post('/api/productos', verificarSeguridad, upload.array('imagenes', 5), asyn
                 sql: "INSERT INTO productos (nombre, precio, imagen, descripcion, tallas, categoria) VALUES (?, ?, ?, ?, ?, ?)",
                 args: [nombre.trim(), Number(precio), rutasImagenes, descripcion ? descripcion.trim() : '', tallas, categoria]
             });
-            res.json({ id: Number(resultado.lastInsertRowid), message: "Guardado con éxito" });
-        } catch (err) {
-            res.status(400).json({ error: err.message });
-        }
+            res.json({ id: Number(resultado.lastInsertRowid), message: "Guardado" });
+        } catch (err) { res.status(400).json({ error: err.message }); }
     }
 });
 
-app.put('/api/productos/:id', verificarSeguridad, async (req, res) => {
+app.delete('/api/productos/:id', verificarSeguridad, async (req, res) => {
     try {
-        await db.execute({ sql: 'UPDATE productos SET precio = ? WHERE id = ?', args: [req.body.precio, req.params.id] });
-        res.json({ mensaje: "Actualizado" });
+        await db.execute({ sql: "DELETE FROM productos WHERE id = ?", args: [req.params.id] });
+        res.json({ message: "Eliminado con éxito" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.put('/api/productos/:id/tallas', verificarSeguridad, express.json(), async (req, res) => {
-    try {
-        await db.execute({ sql: 'UPDATE productos SET tallas = ? WHERE id = ?', args: [req.body.tallas, req.params.id] });
-        res.json({ mensaje: "Actualizado" });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.listen(PORT, () => { console.log(`Servidor corriendo en el puerto ${PORT}`); });
+app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));

@@ -1,16 +1,11 @@
-// Variables para el Modal
 let imagenesActuales = [];
 let indiceImagenActual = 0;
-let productoSeleccionado = null;
-
-// Variables para la Paginación y Filtrado
 let todosLosProductos = [];
 let productosFiltrados = [];
 let paginaActual = 1;
 const PRODUCTOS_POR_PAGINA = 28;
 let filtroActual = 'todo';
 
-// Cargar datos desde el servidor
 async function cargarProductos() {
     try {
         const respuesta = await fetch('/api/productos');
@@ -19,12 +14,10 @@ async function cargarProductos() {
         paginaActual = 1;
         mostrarProductos(); 
     } catch (error) {
-        console.error("Error cargando los productos:", error);
-        document.getElementById('contenedor-productos').innerHTML = '<p>Error al cargar el catálogo desde el servidor.</p>';
+        document.getElementById('contenedor-productos').innerHTML = '<p>Error al cargar el catálogo.</p>';
     }
 }
 
-// Aplicar el filtro de navegación
 function aplicarFiltro(nuevoFiltro) {
     filtroActual = nuevoFiltro;
     paginaActual = 1;
@@ -36,11 +29,9 @@ function aplicarFiltro(nuevoFiltro) {
     } else {
         productosFiltrados = todosLosProductos.filter(p => p.categoria === filtroActual);
     }
-
     mostrarProductos();
 }
 
-// Mostrar solo los productos de la página seleccionada
 function mostrarProductos() {
     const contenedor = document.getElementById('contenedor-productos');
     contenedor.innerHTML = ''; 
@@ -56,27 +47,22 @@ function mostrarProductos() {
             primeraImagen = lista[0];
         }
 
-        // Crear la etiqueta <article> de forma segura
         const tarjeta = document.createElement('article');
         tarjeta.classList.add('product-card');
         tarjeta.style.cursor = 'pointer';
         tarjeta.addEventListener('click', () => abrirModal(producto));
 
-        // Crear y sanitizar la imagen
         const img = document.createElement('img');
         img.src = primeraImagen;
         img.alt = producto.nombre;
 
-        // Crear y sanitizar el título
         const h3 = document.createElement('h3');
         h3.textContent = producto.nombre;
 
-        // Crear y sanitizar el precio
         const pPrecio = document.createElement('p');
         pPrecio.classList.add('price');
         pPrecio.textContent = `$${Number(producto.precio).toLocaleString('es-CO')} COP`;
 
-        // Ensamblar la tarjeta de manera segura
         tarjeta.appendChild(img);
         tarjeta.appendChild(h3);
         tarjeta.appendChild(pPrecio);
@@ -87,7 +73,6 @@ function mostrarProductos() {
     renderizarControlesPaginacion();
 }
 
-// Generar los botones de navegación numéricos
 function renderizarControlesPaginacion() {
     const contenedorPaginacion = document.getElementById('paginacion');
     contenedorPaginacion.innerHTML = '';
@@ -95,7 +80,6 @@ function renderizarControlesPaginacion() {
     const totalPaginas = Math.ceil(productosFiltrados.length / PRODUCTOS_POR_PAGINA);
 
     if (totalPaginas > 1) {
-        // Botón "Anterior"
         const btnAnterior = document.createElement('button');
         btnAnterior.textContent = '« Anterior';
         btnAnterior.disabled = (paginaActual === 1);
@@ -108,13 +92,10 @@ function renderizarControlesPaginacion() {
         });
         contenedorPaginacion.appendChild(btnAnterior);
 
-        // Botones Numerados
         for (let i = 1; i <= totalPaginas; i++) {
             const btnNumero = document.createElement('button');
             btnNumero.textContent = i;
-            if (i === paginaActual) {
-                btnNumero.classList.add('activo');
-            }
+            if (i === paginaActual) btnNumero.classList.add('activo');
             btnNumero.addEventListener('click', () => {
                 paginaActual = i;
                 mostrarProductos();
@@ -123,7 +104,6 @@ function renderizarControlesPaginacion() {
             contenedorPaginacion.appendChild(btnNumero);
         }
 
-        // Botón "Siguiente"
         const btnSiguiente = document.createElement('button');
         btnSiguiente.textContent = 'Siguiente »';
         btnSiguiente.disabled = (paginaActual === totalPaginas);
@@ -138,9 +118,7 @@ function renderizarControlesPaginacion() {
     }
 }
 
-// --- Funciones del Modal ---
 function abrirModal(producto) {
-    productoSeleccionado = producto;
     imagenesActuales = producto.imagen ? producto.imagen.split(',') : [];
     indiceImagenActual = 0;
 
@@ -194,29 +172,21 @@ function cerrarModal() {
     document.getElementById('modal-producto').style.display = 'none';
 }
 
-// --- Configuración Inicial y Eventos ---
-// Vinculamos los eventos de los botones del modal
 document.getElementById('btn-cerrar-modal').addEventListener('click', cerrarModal);
 document.getElementById('btn-carrusel-izq').addEventListener('click', () => cambiarImagen(-1));
 document.getElementById('btn-carrusel-der').addEventListener('click', () => cambiarImagen(1));
 
-// Lógica del Menú Hamburguesa
 document.getElementById('btn-menu').addEventListener('click', () => {
-    const navLinks = document.getElementById('nav-links');
-    navLinks.classList.toggle('active');
+    document.getElementById('nav-links').classList.toggle('active');
 });
 
-// Lógica de los botones de navegación
 document.querySelectorAll('.nav-filtro').forEach(boton => {
     boton.addEventListener('click', (e) => {
         e.preventDefault();
         const nuevoFiltro = e.target.getAttribute('data-filtro');
         aplicarFiltro(nuevoFiltro);
-        
-        // Cierra el menú en la versión móvil tras seleccionar una opción
         document.getElementById('nav-links').classList.remove('active');
     });
 });
 
-// Inicializar la carga al abrir la web
 cargarProductos();

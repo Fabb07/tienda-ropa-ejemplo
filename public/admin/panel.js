@@ -1,6 +1,6 @@
 let todosLosProductos = [];
 let paginaActual = 1;
-const PRODUCTOS_POR_PAGINA = 15;
+const PRODUCTOS_POR_PAGINA = 28;
 
 let editandoId = null;
 let editandoTipo = null;

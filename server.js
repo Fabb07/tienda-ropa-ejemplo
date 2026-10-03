@@ -20,7 +20,6 @@ if (!JWT_SECRET) {
     process.exit(1);
 }
 
-// Configuración de Helmet estricto (ya no permite scripts en línea)
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -32,9 +31,29 @@ app.use(helmet({
 
 app.use(express.json());
 app.use(cookieParser());
+
+// --- NUEVO: Bloqueo estricto para la carpeta de administración ---
+app.use('/admin', (req, res, next) => {
+    const token = req.cookies.token_acceso;
+    let esValido = false;
+
+    if (token) {
+        try {
+            jwt.verify(token, JWT_SECRET);
+            esValido = true;
+        } catch (error) {}
+    }
+
+    if (esValido) {
+        next(); 
+    } else {
+        res.redirect('/login.html');
+    }
+});
+
+// Los archivos estáticos se sirven SOLO si superaron el bloqueo anterior
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Rate Limiting para Login
 const limitadorLogin = rateLimit({
     windowMs: 15 * 60 * 1000, 
     max: 5, 
@@ -43,7 +62,6 @@ const limitadorLogin = rateLimit({
     legacyHeaders: false,
 });
 
-// Configuración Turso
 const db = createClient({
     url: process.env.TURSO_DATABASE_URL,
     authToken: process.env.TURSO_AUTH_TOKEN
@@ -56,7 +74,6 @@ async function inicializarBaseDatos() {
             precio INTEGER NOT NULL, imagen TEXT NOT NULL, descripcion TEXT, tallas TEXT, categoria TEXT
         )`);
         
-        // Intenta añadir la columna a la tabla si no existe
         try {
             await db.execute("ALTER TABLE productos ADD COLUMN categoria TEXT DEFAULT 'general'");
         } catch (e) {}
@@ -66,7 +83,6 @@ async function inicializarBaseDatos() {
 }
 inicializarBaseDatos();
 
-// Configuración Cloudinary
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -79,40 +95,50 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage: storage });
 
-// Middleware de autenticación
+// Middleware de autenticación reestructurado
 function verificarSeguridad(req, res, next) {
     const token = req.cookies.token_acceso;
-    if (!token) return res.status(401).json({ error: 'Acceso denegado' });
-    try {
-        jwt.verify(token, JWT_SECRET);
+    let validado = false;
+
+    if (token) {
+        try {
+            jwt.verify(token, JWT_SECRET);
+            validado = true;
+        } catch (error) {}
+    }
+
+    if (validado) {
         next();
-    } catch (error) {
-        res.status(401).json({ error: 'Token inválido' });
+    } else {
+        res.status(401).json({ error: 'Acceso denegado o sesión expirada' });
     }
 }
 
-// Rutas
 app.post('/api/login', limitadorLogin, async (req, res) => {
     const { username, password } = req.body;
     const usuarioCorrecto = process.env.ADMIN_USERNAME;
     const hashGuardado = process.env.ADMIN_PASSWORD_HASH;
+    let loginExitoso = false;
 
     if (username === usuarioCorrecto) {
         const contrasenaValida = await bcrypt.compare(password, hashGuardado);
         if (contrasenaValida) {
-            const token = jwt.sign({ rol: 'administrador' }, JWT_SECRET, { expiresIn: '8h' });
-            const esProduccion = process.env.NODE_ENV === 'production';
-            
-            res.cookie('token_acceso', token, {
-                httpOnly: true, 
-                secure: esProduccion, 
-                sameSite: 'lax', 
-                maxAge: 8 * 60 * 60 * 1000
-            });
-            res.json({ mensaje: 'Autenticación exitosa' });
-        } else {
-            res.status(401).json({ error: 'Credenciales inválidas' });
+            loginExitoso = true;
         }
+    }
+
+    if (loginExitoso) {
+        // --- CAMBIO: Expiración ajustada a 15 minutos exactos ---
+        const token = jwt.sign({ rol: 'administrador' }, JWT_SECRET, { expiresIn: '15m' });
+        const esProduccion = process.env.NODE_ENV === 'production';
+        
+        res.cookie('token_acceso', token, {
+            httpOnly: true, 
+            secure: esProduccion, 
+            sameSite: 'lax', 
+            maxAge: 15 * 60 * 1000 // 15 minutos en milisegundos
+        });
+        res.json({ mensaje: 'Autenticación exitosa' });
     } else {
         res.status(401).json({ error: 'Credenciales inválidas' });
     }
@@ -162,29 +188,30 @@ app.post('/api/productos', verificarSeguridad, upload.array('imagenes', 5), asyn
     }
 });
 
-
-// --- NUEVAS RUTAS PARA EDITAR ---
-// Actualizar precio de un producto
 app.put('/api/productos/:id/precio', verificarSeguridad, async (req, res) => {
     const { precio } = req.body;
     const precioNum = Number(precio);
+    let errorMensaje = null;
     
     if (isNaN(precioNum) || !Number.isInteger(precioNum) || precioNum <= 0) {
-        return res.status(400).json({ error: "El precio debe ser un número entero mayor a 0." });
+        errorMensaje = "El precio debe ser un número entero mayor a 0.";
     }
     
-    try {
-        await db.execute({ 
-            sql: "UPDATE productos SET precio = ? WHERE id = ?", 
-            args: [precioNum, req.params.id] 
-        });
-        res.json({ message: "Precio actualizado con éxito" });
-    } catch (err) { 
-        res.status(500).json({ error: err.message }); 
+    if (errorMensaje) {
+        res.status(400).json({ error: errorMensaje });
+    } else {
+        try {
+            await db.execute({ 
+                sql: "UPDATE productos SET precio = ? WHERE id = ?", 
+                args: [precioNum, req.params.id] 
+            });
+            res.json({ message: "Precio actualizado con éxito" });
+        } catch (err) { 
+            res.status(500).json({ error: err.message }); 
+        }
     }
 });
 
-// Actualizar tallas de un producto
 app.put('/api/productos/:id/tallas', verificarSeguridad, async (req, res) => {
     const { tallas } = req.body;
     try {

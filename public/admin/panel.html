@@ -67,8 +67,21 @@
 
         <!-- Contenedor para los botones de paginación del admin -->
         <div id="paginacion-admin" style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; padding-bottom: 30px;"></div>
-        
+
     </div>
+    <!-- Ventana Modal de Edición (Oculta por defecto) -->
+    <div id="modal-edicion" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;">
+        <div style="background: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 300px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <h3 id="modal-edicion-titulo" style="margin-top: 0; color: #222;">Editar</h3>
+            <p id="modal-edicion-desc" style="font-size: 14px; color: #666;"></p>
+            <input type="text" id="modal-edicion-input" style="width: 90%; padding: 10px; margin: 15px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 16px;">
+            <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                <button id="btn-cancelar-edicion" style="padding: 10px 15px; border: none; background: #eee; color: #333; border-radius: 4px; cursor: pointer; font-weight: bold;">Cancelar</button>
+                <button id="btn-guardar-edicion" style="padding: 10px 15px; border: none; background: #f39c12; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">Guardar</button>
+            </div>
+        </div>
+    </div>
+    
     <script src="/admin/panel.js"></script>
 </body>
 </html>

@@ -132,17 +132,20 @@ function abrirModal(producto) {
     contenedorTallas.innerHTML = ''; 
             
     if (producto.tallas) {
-        const listaTallas = producto.tallas.split(',');
-        listaTallas.forEach(talla => {
-            const spanTalla = document.createElement('span');
-            spanTalla.textContent = talla.trim(); 
-            contenedorTallas.appendChild(spanTalla);
-        });
+        // Separa, limpia espacios extra y vuelve a unir con coma y espacio
+        const arregloTallas = producto.tallas.split(',');
+        const tallasLimpias = arregloTallas.map(talla => talla.trim());
+        const textoFinal = tallasLimpias.join(', ');
+
+        const spanTalla = document.createElement('span');
+        spanTalla.textContent = textoFinal; 
+        contenedorTallas.appendChild(spanTalla);
     } else {
         const spanUnica = document.createElement('span');
         spanUnica.textContent = 'Única';
         contenedorTallas.appendChild(spanUnica);
     }
+
 
     actualizarImagenCarrusel();
 

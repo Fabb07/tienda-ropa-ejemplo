@@ -32,7 +32,6 @@ app.use(helmet({
 app.use(express.json());
 app.use(cookieParser());
 
-// --- NUEVO: Bloqueo estricto para la carpeta de administración ---
 app.use('/admin', (req, res, next) => {
     const token = req.cookies.token_acceso;
     let esValido = false;
@@ -51,7 +50,6 @@ app.use('/admin', (req, res, next) => {
     }
 });
 
-// Los archivos estáticos se sirven SOLO si superaron el bloqueo anterior
 app.use(express.static(path.join(__dirname, 'public')));
 
 const limitadorLogin = rateLimit({
@@ -89,13 +87,26 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+// Configuración Cloudinary optimizada
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
-    params: { folder: 'tienda_ropa', allowed_formats: ['jpg', 'png', 'jpeg', 'webp'] }
+    params: { 
+        folder: 'tienda_ropa', 
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+        transformation: [
+            { width: 1000, crop: "limit" }, // Evita resoluciones extremas
+            { quality: "auto" }, // Compresión inteligente
+            { fetch_format: "auto" } // Convierte automáticamente a WebP/AVIF
+        ]
+    }
 });
-const upload = multer({ storage: storage });
 
-// Middleware de autenticación reestructurado
+// Configuración Multer con límite de peso
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 } // Límite de 5 MB por imagen
+});
+
 function verificarSeguridad(req, res, next) {
     const token = req.cookies.token_acceso;
     let validado = false;
@@ -128,7 +139,6 @@ app.post('/api/login', limitadorLogin, async (req, res) => {
     }
 
     if (loginExitoso) {
-        // --- CAMBIO: Expiración ajustada a 15 minutos exactos ---
         const token = jwt.sign({ rol: 'administrador' }, JWT_SECRET, { expiresIn: '15m' });
         const esProduccion = process.env.NODE_ENV === 'production';
         
@@ -136,12 +146,22 @@ app.post('/api/login', limitadorLogin, async (req, res) => {
             httpOnly: true, 
             secure: esProduccion, 
             sameSite: 'lax', 
-            maxAge: 15 * 60 * 1000 // 15 minutos en milisegundos
+            maxAge: 15 * 60 * 1000 
         });
         res.json({ mensaje: 'Autenticación exitosa' });
     } else {
         res.status(401).json({ error: 'Credenciales inválidas' });
     }
+});
+
+app.post('/api/logout', (req, res) => {
+    const esProduccion = process.env.NODE_ENV === 'production';
+    res.clearCookie('token_acceso', {
+        httpOnly: true,
+        secure: esProduccion,
+        sameSite: 'lax'
+    });
+    res.json({ mensaje: 'Sesión cerrada exitosamente' });
 });
 
 app.get('/api/productos', async (req, res) => {
@@ -188,40 +208,45 @@ app.post('/api/productos', verificarSeguridad, upload.array('imagenes', 5), asyn
     }
 });
 
-app.put('/api/productos/:id/precio', verificarSeguridad, async (req, res) => {
-    const { precio } = req.body;
+// --- NUEVA RUTA UNIFICADA DE EDICIÓN ---
+app.put('/api/productos/:id', verificarSeguridad, upload.array('imagenes', 5), async (req, res) => {
+    const { nombre, precio, descripcion, categoria } = req.body;
+    let tallas = req.body.tallas ? (Array.isArray(req.body.tallas) ? req.body.tallas.join(',') : req.body.tallas) : '';
+    const nuevasRutasImagenes = req.files && req.files.length > 0 ? req.files.map(file => file.path).join(',') : '';
+
+    let mensajeError = null;
     const precioNum = Number(precio);
-    let errorMensaje = null;
-    
-    if (isNaN(precioNum) || !Number.isInteger(precioNum) || precioNum <= 0) {
-        errorMensaje = "El precio debe ser un número entero mayor a 0.";
+
+    if (!nombre || typeof nombre !== 'string' || nombre.trim().length < 2 || nombre.trim().length > 100) {
+        mensajeError = "El nombre es obligatorio (2 a 100 caracteres).";
+    } else if (isNaN(precioNum) || !Number.isInteger(precioNum) || precioNum <= 0) {
+        mensajeError = "El precio debe ser un número entero mayor a 0.";
+    } else if (!categoria) {
+        mensajeError = "Debe seleccionar una categoría.";
+    } else if (descripcion && descripcion.length > 500) {
+        mensajeError = "La descripción no puede superar 500 caracteres.";
     }
-    
-    if (errorMensaje) {
-        res.status(400).json({ error: errorMensaje });
+
+    if (mensajeError) {
+        res.status(400).json({ error: mensajeError });
     } else {
         try {
-            await db.execute({ 
-                sql: "UPDATE productos SET precio = ? WHERE id = ?", 
-                args: [precioNum, req.params.id] 
-            });
-            res.json({ message: "Precio actualizado con éxito" });
+            let sqlQuery = "";
+            let sqlArgs = [];
+
+            if (nuevasRutasImagenes !== '') {
+                sqlQuery = "UPDATE productos SET nombre = ?, precio = ?, imagen = ?, descripcion = ?, tallas = ?, categoria = ? WHERE id = ?";
+                sqlArgs = [nombre.trim(), precioNum, nuevasRutasImagenes, descripcion ? descripcion.trim() : '', tallas, categoria, req.params.id];
+            } else {
+                sqlQuery = "UPDATE productos SET nombre = ?, precio = ?, descripcion = ?, tallas = ?, categoria = ? WHERE id = ?";
+                sqlArgs = [nombre.trim(), precioNum, descripcion ? descripcion.trim() : '', tallas, categoria, req.params.id];
+            }
+
+            await db.execute({ sql: sqlQuery, args: sqlArgs });
+            res.json({ message: "Producto actualizado con éxito" });
         } catch (err) { 
             res.status(500).json({ error: err.message }); 
         }
-    }
-});
-
-app.put('/api/productos/:id/tallas', verificarSeguridad, async (req, res) => {
-    const { tallas } = req.body;
-    try {
-        await db.execute({ 
-            sql: "UPDATE productos SET tallas = ? WHERE id = ?", 
-            args: [tallas, req.params.id] 
-        });
-        res.json({ message: "Tallas actualizadas con éxito" });
-    } catch (err) { 
-        res.status(500).json({ error: err.message }); 
     }
 });
 
@@ -230,6 +255,15 @@ app.delete('/api/productos/:id', verificarSeguridad, async (req, res) => {
         await db.execute({ sql: "DELETE FROM productos WHERE id = ?", args: [req.params.id] });
         res.json({ message: "Eliminado con éxito" });
     } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Manejador de errores para imágenes demasiado pesadas
+app.use((err, req, res, next) => {
+    let mensajeError = err.message;
+    if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+        mensajeError = "Una o más imágenes superan el límite máximo de 5 MB.";
+    }
+    res.status(400).json({ error: mensajeError });
 });
 
 app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));

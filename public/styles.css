@@ -310,3 +310,61 @@ footer {
     .nav-links.active { display: flex; }
     .menu-toggle { display: block; }
 }
+
+/* --- Franja General de WhatsApp --- */
+.whatsapp-general {
+    text-align: center;
+    padding: 35px 20px;
+    background-color: #f5f5f5;
+    margin: 40px 0;
+}
+.whatsapp-general p {
+    font-size: 16px;
+    margin-bottom: 15px;
+    color: #333;
+    font-weight: bold;
+}
+.btn-whatsapp-general {
+    background-color: #25D366;
+    color: white;
+    padding: 12px 24px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+    display: inline-block;
+    transition: background-color 0.3s ease;
+}
+.btn-whatsapp-general:hover {
+    background-color: #128C7E;
+}
+
+/* --- Botón Flotante de WhatsApp --- */
+.whatsapp-flotante {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background-color: #25D366;
+    color: white;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.whatsapp-flotante:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+
+@media (max-width: 768px) {
+    .whatsapp-flotante {
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+    }
+}

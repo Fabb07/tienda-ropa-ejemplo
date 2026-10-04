@@ -3,7 +3,19 @@ let paginaActual = 1;
 const PRODUCTOS_POR_PAGINA = 28;
 
 let editandoId = null;
-let editandoTipo = null;
+
+document.getElementById('btn-logout').addEventListener('click', async () => {
+    try {
+        const response = await fetch('/api/logout', { method: 'POST' });
+        if (response.ok) {
+            window.location.href = '/login.html';
+        } else {
+            alert('Error al cerrar sesión');
+        }
+    } catch (error) {
+        alert('Error de conexión con el servidor');
+    }
+});
 
 const selectCategoria = document.getElementById('categoria');
 const contenedorTallas = document.getElementById('contenedor-tallas-dinamico');
@@ -117,6 +129,7 @@ function mostrarInventario() {
         img.src = miniatura;
         img.style.width = '50px';
         img.style.borderRadius = '4px';
+        img.loading = 'lazy'; // <-- Acelera la carga de la tabla administrativa
         tdImg.appendChild(img);
 
         const tdNombre = document.createElement('td');
@@ -127,23 +140,18 @@ function mostrarInventario() {
 
         const tdAcciones = document.createElement('td');
         
-        const btnPrecio = document.createElement('button');
-        btnPrecio.textContent = 'Precio';
-        btnPrecio.style.cssText = 'margin-right: 5px; padding: 5px 10px; background-color: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;';
-        btnPrecio.addEventListener('click', () => abrirModalEdicion(producto.id, 'precio', producto.precio));
-
-        const btnTallas = document.createElement('button');
-        btnTallas.textContent = 'Tallas';
-        btnTallas.style.cssText = 'margin-right: 5px; padding: 5px 10px; background-color: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;';
-        btnTallas.addEventListener('click', () => abrirModalEdicion(producto.id, 'tallas', producto.tallas || ''));
+        // --- BOTÓN ÚNICO DE EDICIÓN ---
+        const btnEditar = document.createElement('button');
+        btnEditar.textContent = 'Editar';
+        btnEditar.style.cssText = 'margin-right: 5px; padding: 5px 10px; background-color: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;';
+        btnEditar.addEventListener('click', () => abrirModalEdicion(producto));
 
         const btnEliminar = document.createElement('button');
         btnEliminar.className = 'btn-eliminar';
         btnEliminar.textContent = 'Eliminar';
         btnEliminar.addEventListener('click', () => eliminarProducto(producto.id));
         
-        tdAcciones.appendChild(btnPrecio);
-        tdAcciones.appendChild(btnTallas);
+        tdAcciones.appendChild(btnEditar);
         tdAcciones.appendChild(btnEliminar);
 
         fila.appendChild(tdImg);
@@ -157,61 +165,101 @@ function mostrarInventario() {
     renderizarControlesPaginacionAdmin();
 }
 
-function abrirModalEdicion(id, tipo, valorActual) {
-    editandoId = id;
-    editandoTipo = tipo;
+// --- LÓGICA DEL NUEVO MODAL MAESTRO ---
+function abrirModalEdicion(producto) {
+    editandoId = producto.id;
     
-    const modal = document.getElementById('modal-edicion');
-    const titulo = document.getElementById('modal-edicion-titulo');
-    const desc = document.getElementById('modal-edicion-desc');
-    const input = document.getElementById('modal-edicion-input');
+    document.getElementById('edit-nombre').value = producto.nombre;
+    document.getElementById('edit-precio').value = producto.precio;
+    document.getElementById('edit-descripcion').value = producto.descripcion || '';
+    document.getElementById('edit-categoria').value = producto.categoria;
+    document.getElementById('edit-imagenes').value = ''; 
+    document.getElementById('edit-mensaje').innerText = '';
     
-    if (tipo === 'precio') {
-        titulo.textContent = 'Editar Precio';
-        desc.textContent = `Precio actual: $${Number(valorActual).toLocaleString('es-CO')}`;
-    } else {
-        titulo.textContent = 'Editar Tallas';
-        desc.textContent = `Tallas actuales: ${valorActual}`;
+    renderizarTallasEdicion(producto.categoria, producto.tallas || '');
+    
+    document.getElementById('modal-edicion').style.display = 'flex';
+}
+
+const selectEditCategoria = document.getElementById('edit-categoria');
+selectEditCategoria.addEventListener('change', (e) => {
+    renderizarTallasEdicion(e.target.value, '');
+});
+
+function renderizarTallasEdicion(categoria, tallasActualesSeleccionadas) {
+    const contenedor = document.getElementById('edit-contenedor-tallas');
+    
+    while (contenedor.firstChild) {
+        contenedor.removeChild(contenedor.firstChild);
     }
-    
-    input.value = valorActual;
-    modal.style.display = 'flex';
+
+    let opciones = [];
+    if (categoria === 'camisetas') {
+        opciones = ['S', 'M', 'L', 'XL'];
+    } else if (categoria === 'pantalones') {
+        opciones = ['28', '30', '32', '34', '36', '38'];
+    } else if (categoria === 'zapatos') {
+        opciones = ['35', '36', '37', '38', '39', '40', '41', '42'];
+    } else {
+        opciones = ['Única'];
+    }
+
+    const tallasArray = tallasActualesSeleccionadas.split(',').map(t => t.trim());
+
+    opciones.forEach(talla => {
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.name = 'tallas';
+        checkbox.value = talla;
+        
+        let coincidenciaEncontrada = false;
+        tallasArray.forEach(tallaActual => {
+            if (tallaActual === talla) {
+                coincidenciaEncontrada = true;
+            }
+        });
+        
+        if (coincidenciaEncontrada || talla === 'Única') {
+            checkbox.checked = true;
+        }
+        
+        if (talla === 'Única') {
+            checkbox.style.display = 'none';
+        }
+
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(' ' + talla));
+        contenedor.appendChild(label);
+    });
 }
 
 document.getElementById('btn-cancelar-edicion').addEventListener('click', () => {
     document.getElementById('modal-edicion').style.display = 'none';
 });
 
-document.getElementById('btn-guardar-edicion').addEventListener('click', async () => {
-    const nuevoValor = document.getElementById('modal-edicion-input').value;
-    
-    if (nuevoValor !== null && nuevoValor.trim() !== '') {
-        const endpoint = `/api/productos/${editandoId}/${editandoTipo}`;
-        let bodyData = null;
-        
-        if (editandoTipo === 'precio') {
-            bodyData = { precio: nuevoValor };
-        } else {
-            bodyData = { tallas: nuevoValor };
-        }
+document.getElementById('formulario-editar-producto').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
 
-        try {
-            const response = await fetch(endpoint, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bodyData)
-            });
-            
-            if (response.ok) {
-                document.getElementById('modal-edicion').style.display = 'none';
-                cargarInventario(); 
-            } else {
-                const data = await response.json();
-                alert('Error al actualizar: ' + data.error);
-            }
-        } catch (error) {
-            alert('Error de conexión con el servidor.');
+    try {
+        const response = await fetch(`/api/productos/${editandoId}`, {
+            method: 'PUT',
+            body: formData 
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            document.getElementById('modal-edicion').style.display = 'none';
+            cargarInventario(); 
+        } else {
+            document.getElementById('edit-mensaje').innerText = 'Error: ' + result.error;
+            document.getElementById('edit-mensaje').style.color = 'red';
         }
+    } catch (error) {
+        document.getElementById('edit-mensaje').innerText = 'Error de conexión con el servidor.';
+        document.getElementById('edit-mensaje').style.color = 'red';
     }
 });
 

@@ -52,9 +52,11 @@ function mostrarProductos() {
         tarjeta.style.cursor = 'pointer';
         tarjeta.addEventListener('click', () => abrirModal(producto));
 
+        // Crear y sanitizar la imagen
         const img = document.createElement('img');
         img.src = primeraImagen;
         img.alt = producto.nombre;
+        img.loading = 'lazy'; // <-- Obliga al navegador a descargar la imagen solo cuando el cliente hace scroll
 
         const h3 = document.createElement('h3');
         h3.textContent = producto.nombre;
@@ -148,7 +150,7 @@ function abrirModal(producto) {
     flechas.forEach(f => f.style.display = imagenesActuales.length > 1 ? 'block' : 'none');
 
     const numeroTelefono = "573001234567"; 
-    const mensaje = encodeURIComponent(`Hola, estoy interesado en el producto "${producto.nombre}" con precio de $${producto.precio}.`);
+    const mensaje = encodeURIComponent(`Hola, me interesa esta prenda: ${producto.nombre}. ¿Me podrían dar más información?`);
     document.getElementById('modal-whatsapp').href = `https://wa.me/${numeroTelefono}?text=${mensaje}`;
 
     document.getElementById('modal-producto').style.display = 'flex';

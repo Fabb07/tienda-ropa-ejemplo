@@ -151,15 +151,8 @@ function abrirModal(producto) {
     const flechas = document.querySelectorAll('.flecha-carrusel');
     flechas.forEach(f => f.style.display = imagenesActuales.length > 1 ? 'block' : 'none');
 
-    // Extraer la primera imagen para enviarla en el mensaje
-    let urlImagen = '';
-    if (imagenesActuales.length > 0) {
-        urlImagen = imagenesActuales[0];
-    }
-
-    const numeroTelefono = "573154396296"; // Tu número de tienda conservado
-    const mensajeTexto = `Hola, me interesa esta prenda: ${producto.nombre}. ¿Me podrían dar más información?\n\nMira la imagen aquí: ${urlImagen}`;
-    const mensaje = encodeURIComponent(mensajeTexto);
+    const numeroTelefono = "573154396296"; 
+    const mensaje = encodeURIComponent(`Hola, me interesa esta prenda: ${producto.nombre}. ¿Me podrían dar más información?`);
     
     document.getElementById('modal-whatsapp').href = `https://wa.me/${numeroTelefono}?text=${mensaje}`;
 

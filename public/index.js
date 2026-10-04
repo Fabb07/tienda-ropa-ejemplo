@@ -152,7 +152,7 @@ function abrirModal(producto) {
     const flechas = document.querySelectorAll('.flecha-carrusel');
     flechas.forEach(f => f.style.display = imagenesActuales.length > 1 ? 'block' : 'none');
 
-    const numeroTelefono = "573001234567"; 
+    const numeroTelefono = "573154396296"; // Cambia este número por el de tu tienda
     const mensaje = encodeURIComponent(`Hola, me interesa esta prenda: ${producto.nombre}. ¿Me podrían dar más información?`);
     document.getElementById('modal-whatsapp').href = `https://wa.me/${numeroTelefono}?text=${mensaje}`;
 

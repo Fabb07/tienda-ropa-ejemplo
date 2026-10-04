@@ -327,4 +327,12 @@ function renderizarControlesPaginacionAdmin() {
     }
 }
 
+// Cerrar modal de edición al hacer clic fuera de la ventana
+window.addEventListener('click', (e) => {
+    const modal = document.getElementById('modal-edicion');
+    if (e.target === modal) {
+        modal.style.display = 'none';
+    }
+});
+
 cargarInventario();

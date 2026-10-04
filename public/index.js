@@ -146,14 +146,21 @@ function abrirModal(producto) {
         contenedorTallas.appendChild(spanUnica);
     }
 
-
     actualizarImagenCarrusel();
 
     const flechas = document.querySelectorAll('.flecha-carrusel');
     flechas.forEach(f => f.style.display = imagenesActuales.length > 1 ? 'block' : 'none');
 
-    const numeroTelefono = "573154396296"; // Cambia este número por el de tu tienda
-    const mensaje = encodeURIComponent(`Hola, me interesa esta prenda: ${producto.nombre}. ¿Me podrían dar más información?`);
+    // Extraer la primera imagen para enviarla en el mensaje
+    let urlImagen = '';
+    if (imagenesActuales.length > 0) {
+        urlImagen = imagenesActuales[0];
+    }
+
+    const numeroTelefono = "573154396296"; // Tu número de tienda conservado
+    const mensajeTexto = `Hola, me interesa esta prenda: ${producto.nombre}. ¿Me podrían dar más información?\n\nMira la imagen aquí: ${urlImagen}`;
+    const mensaje = encodeURIComponent(mensajeTexto);
+    
     document.getElementById('modal-whatsapp').href = `https://wa.me/${numeroTelefono}?text=${mensaje}`;
 
     document.getElementById('modal-producto').style.display = 'flex';
@@ -191,7 +198,18 @@ document.querySelectorAll('.nav-filtro').forEach(boton => {
         const nuevoFiltro = e.target.getAttribute('data-filtro');
         aplicarFiltro(nuevoFiltro);
         document.getElementById('nav-links').classList.remove('active');
+        
+        // Scroll automático hacia la parte superior
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
+});
+
+// Cerrar modal al hacer clic fuera de la tarjeta
+window.addEventListener('click', (e) => {
+    const modal = document.getElementById('modal-producto');
+    if (e.target === modal) {
+        cerrarModal();
+    }
 });
 
 cargarProductos();
